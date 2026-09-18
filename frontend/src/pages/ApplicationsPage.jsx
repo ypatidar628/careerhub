@@ -45,7 +45,7 @@ export default function ApplicationsPage() {
       <p className="font-mono-display text-xs uppercase tracking-widest text-brand">
         {recruiter ? "Recruiter workspace" : "Candidate workspace"}
       </p>
-      <h1 className="mt-2 text-3xl font-bold dark:text-white">
+      <h1 className="mt-2 text-2xl font-bold dark:text-white sm:text-3xl">
         {recruiter ? "Applicant pipeline" : "My applications"}
       </h1>
       <div className="mt-7 space-y-4">

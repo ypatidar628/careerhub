@@ -39,7 +39,7 @@ export default function HomePage() {
     <>
       <section
         ref={hero}
-        className="relative isolate overflow-hidden bg-[#080b20] px-5 py-16 text-white md:py-24"
+        className="relative isolate overflow-hidden bg-[#080b20] px-4 py-12 text-white sm:px-5 sm:py-16 md:py-24"
       >
         <div className="absolute -left-32 top-10 h-80 w-80 rounded-full bg-brand/30 blur-3xl" />
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-400/15 blur-3xl" />
@@ -48,7 +48,7 @@ export default function HomePage() {
             <span className="hero-reveal font-mono-display rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs text-cyan-100">
               <FiZap className="mr-2 inline" /> CAREERS, REIMAGINED
             </span>
-            <h1 className="hero-reveal mt-6 max-w-3xl text-5xl font-bold leading-[.98] tracking-tight md:text-7xl">
+            <h1 className="hero-reveal mt-6 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl md:leading-[.98]">
               Find work that feels{" "}
               <span className="text-[#b8b4ff]">like your future.</span>
             </h1>
@@ -61,20 +61,22 @@ export default function HomePage() {
                 e.preventDefault();
                 nav(`/jobs?search=${e.target.search.value}`);
               }}
-              className="hero-reveal mt-8 flex max-w-xl rounded-2xl border border-white/10 bg-white p-2 text-slate-900 shadow-2xl"
+              className="hero-reveal mt-8 flex max-w-xl flex-col gap-2 rounded-2xl border border-white/10 bg-white p-2 text-slate-900 shadow-2xl sm:flex-row sm:items-center sm:gap-0"
             >
-              <FiSearch className="m-3 text-slate-400" />
-              <input
-                name="search"
-                aria-label="Search jobs"
-                className="min-w-0 flex-1 bg-transparent outline-none"
-                placeholder="Job title, skill, or company"
-              />
+              <div className="flex min-w-0 flex-1 items-center">
+                <FiSearch className="m-3 shrink-0 text-slate-400" />
+                <input
+                  name="search"
+                  aria-label="Search jobs"
+                  className="min-w-0 flex-1 bg-transparent py-2 outline-none"
+                  placeholder="Job title, skill, or company"
+                />
+              </div>
               <button className="rounded-xl bg-brand px-5 py-3 font-semibold text-white transition hover:scale-[1.03] hover:bg-indigo-500">
                 Search
               </button>
             </form>
-            <div className="hero-reveal mt-7 flex gap-7 text-sm text-slate-300">
+            <div className="hero-reveal mt-7 flex flex-wrap gap-4 text-sm text-slate-300 sm:gap-7">
               <span>
                 <b className="text-white">12k+</b> open roles
               </span>
@@ -90,21 +92,21 @@ export default function HomePage() {
               src={careerJourney}
               alt="A professional moving upward through glowing career opportunities"
             />
-            <div className="float-slow absolute -left-6 bottom-10 z-20 rounded-2xl border border-white/20 bg-slate-950/70 p-4 shadow-xl backdrop-blur">
+            <div className="float-slow absolute -left-2 bottom-8 z-20 hidden rounded-2xl border border-white/20 bg-slate-950/70 p-4 shadow-xl backdrop-blur sm:block md:-left-6">
               <FiTrendingUp className="text-xl text-cyan-300" />
               <p className="mt-2 text-xs text-slate-300">Your trajectory</p>
               <p className="font-mono-display font-bold text-white">
                 +24% momentum
               </p>
             </div>
-            <div className="absolute -right-4 top-12 z-20 rounded-2xl border border-white/20 bg-white/90 p-3 text-ink shadow-xl">
+            <div className="absolute -right-2 top-10 z-20 hidden rounded-2xl border border-white/20 bg-white/90 p-3 text-ink shadow-xl sm:block md:-right-4">
               <FiUsers className="text-brand" />
               <p className="mt-1 text-xs font-bold">Teams are hiring</p>
             </div>
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-5 py-20">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-5 sm:py-20">
         <SectionHeading
           eyebrow="Curated opportunities"
           title="Roles worth showing up for"
@@ -122,7 +124,7 @@ export default function HomePage() {
           Explore all jobs <FiArrowRight />
         </Link>
       </section>
-      <section className="bg-ink px-5 py-20 text-white">
+      <section className="bg-ink px-4 py-12 text-white sm:px-5 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <SectionHeading
             eyebrow="Why CareerHub"
@@ -156,8 +158,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-5 py-20 text-center">
-        <h2 className="text-3xl font-bold dark:text-white">
+      <section className="mx-auto max-w-7xl px-4 py-12 text-center sm:px-5 sm:py-20">
+        <h2 className="text-2xl font-bold dark:text-white sm:text-3xl">
           Ready to find your next chapter?
         </h2>
         <p className="mt-3 text-slate-500">

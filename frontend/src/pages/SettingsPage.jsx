@@ -4,7 +4,7 @@ export default function SettingsPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold dark:text-white">Settings</h1>
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 p-5 dark:border-slate-700 sm:flex-row sm:items-center">
         <div>
           <h2 className="font-bold dark:text-white">Dark mode</h2>
           <p className="text-sm text-slate-500">

@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <p className="text-sm font-bold uppercase tracking-wider text-brand">
         {user.role} dashboard
       </p>
-      <h1 className="mt-1 text-3xl font-bold dark:text-white">
+      <h1 className="mt-1 text-2xl font-bold dark:text-white sm:text-3xl">
         Your workspace, at a glance.
       </h1>
       <div className="mt-7 grid gap-4 sm:grid-cols-3">

@@ -47,13 +47,15 @@ export default function JobDetailsPage() {
     }
   };
   return (
-    <main className="mx-auto max-w-4xl px-5 py-12">
+    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-5 sm:py-12">
       <p className="font-bold text-brand">{job.company}</p>
-      <h1 className="mt-2 text-4xl font-bold dark:text-white">{job.title}</h1>
-      <p className="mt-3 text-slate-500">
+      <h1 className="mt-2 text-3xl font-bold dark:text-white sm:text-4xl">
+        {job.title}
+      </h1>
+      <p className="mt-3 break-words text-slate-500">
         {job.location} · {job.mode} · {job.experience} · {job.salary}
       </p>
-      <div className="mt-7 flex gap-3">
+      <div className="mt-7 flex flex-wrap gap-3">
         <button
           onClick={() =>
             !user
@@ -76,7 +78,7 @@ export default function JobDetailsPage() {
       {applying && (
         <form
           onSubmit={apply}
-          className="mt-7 rounded-2xl border border-brand/30 bg-brand/5 p-6"
+          className="mt-7 rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:p-6"
         >
           <h2 className="text-xl font-bold">Complete application</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -101,7 +103,7 @@ export default function JobDetailsPage() {
           </button>
         </form>
       )}
-      <section className="mt-10 rounded-2xl border border-slate-200 p-7 dark:border-slate-700">
+      <section className="mt-10 rounded-2xl border border-slate-200 p-5 dark:border-slate-700 sm:p-7">
         <h2 className="text-xl font-bold dark:text-white">About the role</h2>
         <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">
           {job.description}

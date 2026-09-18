@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import client from "../../api/client";
 import { clearSession } from "../../store/authSlice";
 // Local credentials are cleared even if the server is unreachable, preventing an unsafe authenticated-looking UI.
-export default function LogoutButton() {
+export default function LogoutButton({ showLabel = false }) {
   const [confirm, setConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -31,9 +31,14 @@ export default function LogoutButton() {
       <button
         aria-label="Sign out"
         onClick={() => setConfirm(true)}
-        className="rounded-lg p-2 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+        className={`rounded-lg p-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
+          showLabel
+            ? "flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-rose-600"
+            : ""
+        }`}
       >
         <FiLogOut />
+        {showLabel && <span>Sign out</span>}
       </button>
       {confirm && (
         <div

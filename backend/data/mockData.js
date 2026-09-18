@@ -1,8 +1,5 @@
 export const jobs = [
-  { id: 'j1', title: 'Senior Product Designer', company: 'Lumin', location: 'Bengaluru, India', mode: 'Hybrid', salary: '₹22–30 LPA', experience: '4–6 years', postedAt: '2 days ago', skills: ['Figma', 'Research', 'Design systems'], description: 'Lead thoughtful product experiences for a growing financial platform.', requirements: ['4+ years of product design experience', 'Strong portfolio with shipped work', 'Comfortable working with engineering teams'] },
-  { id: 'j2', title: 'Frontend Engineer', company: 'Northstar', location: 'Remote', mode: 'Remote', salary: '₹18–26 LPA', experience: '3–5 years', postedAt: '1 day ago', skills: ['React', 'JavaScript', 'CSS'], description: 'Build fast, accessible user experiences used by thousands of teams.', requirements: ['Expertise in React and modern JavaScript', 'Attention to accessibility', 'Experience with API integration'] },
-  { id: 'j3', title: 'Data Analyst', company: 'Pioneer Labs', location: 'Mumbai, India', mode: 'On-site', salary: '₹10–16 LPA', experience: '2–4 years', postedAt: '4 days ago', skills: ['SQL', 'Python', 'Tableau'], description: 'Turn product data into clear decisions for a high-impact team.', requirements: ['Advanced SQL skills', 'Data visualization experience', 'Clear written communication'] },
-  { id: 'j4', title: 'Talent Acquisition Partner', company: 'Orbit', location: 'Delhi, India', mode: 'Hybrid', salary: '₹12–18 LPA', experience: '3–5 years', postedAt: '5 days ago', skills: ['Recruiting', 'Sourcing', 'ATS'], description: 'Own full-cycle hiring for product and engineering teams.', requirements: ['Technical hiring experience', 'Candidate-first mindset', 'Strong stakeholder management'] }
+
 ];
 
 export const notifications = [{ id: 1, title: 'Your profile is 78% complete', time: 'Today' }, { id: 2, title: 'New roles match your skills', time: 'Yesterday' }];

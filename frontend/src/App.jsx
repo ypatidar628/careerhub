@@ -18,11 +18,13 @@ import DashboardShell from "./components/dashboard/DashboardShell";
 import RoleRoute from "./components/auth/RoleRoute";
 function Layout() {
   return (
-    <>
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-hidden">
       <SiteHeader />
-      <Outlet />
+      <div className="min-w-0 flex-1">
+        <Outlet />
+      </div>
       <SiteFooter />
-    </>
+    </div>
   );
 }
 export default function App() {

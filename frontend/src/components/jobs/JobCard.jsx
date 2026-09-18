@@ -28,7 +28,7 @@ export default function JobCard({ job }) {
           </span>
         ))}
       </div>
-      <div className="mt-5 flex items-center justify-between text-sm">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span>{job.salary}</span>
         <Link
           className="font-bold text-brand transition group-hover:translate-x-1"
