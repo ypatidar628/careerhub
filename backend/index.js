@@ -59,7 +59,6 @@ const startServer = async () => {
     process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (error) {
     console.error("Failed to start the backend:", error.message);
-    console.log("hello")
     process.exit(1);
   }
 };
