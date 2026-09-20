@@ -2,7 +2,7 @@
 
 CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching with custom dropdowns, and a dedicated **real-time conversation history and chat system** powered by Socket.IO.
 
----
+----
 
 ## 🌟 Key Features
 
@@ -80,17 +80,35 @@ cp frontend/.env.example frontend/.env
 
 #### Backend `.env` Configuration
 ```env
+NODE_ENV=development
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/careerhub
 JWT_SECRET=your_super_secret_jwt_key_here
-CLIENT_URL=http://localhost:5173
+JWT_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
+CLIENT_URL=http://localhost:5173
 
-# Optional: Cloudinary for cloud uploads (defaults to local /uploads if not set)
-# CLOUDINARY_CLOUD_NAME=your_cloud_name
-# CLOUDINARY_API_KEY=your_api_key
-# CLOUDINARY_API_SECRET=your_api_secret
+# Optional: Cloudinary for cloud media storage (falls back to local /uploads if not set)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
+
+#### Environment Variables Reference
+
+| Variable | Scope | Required | Default / Example | Description |
+|---|---|---|---|---|
+| `NODE_ENV` | Backend | No | `development` | Application environment (`development` or `production`) |
+| `PORT` | Backend | No | `5000` | Port for Express REST API & Socket.IO server |
+| `MONGODB_URI` | Backend | **Yes** | `mongodb://localhost:27017/careerhub` | MongoDB connection URI |
+| `JWT_SECRET` | Backend | **Yes** | `replace-with-a-long-random-secret` | Secret key used to sign & verify JWT tokens |
+| `JWT_EXPIRES_IN` | Backend | No | `7d` | Token expiry duration (e.g. `7d`, `24h`) |
+| `FRONTEND_URL` | Backend | No | `http://localhost:5173` | Frontend client origin allowed by CORS and Socket.IO |
+| `CLIENT_URL` | Backend | No | `http://localhost:5173` | Secondary client URL alias for CORS |
+| `CLOUDINARY_CLOUD_NAME` | Backend | No | `""` | Cloudinary cloud name for file uploads |
+| `CLOUDINARY_API_KEY` | Backend | No | `""` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Backend | No | `""` | Cloudinary API secret key |
+| `VITE_API_URL` | Frontend | **Yes** | `http://localhost:5000` | Base backend API endpoint URL |
 
 #### Frontend `.env` Configuration
 ```env
