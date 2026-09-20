@@ -11,11 +11,25 @@ export const stages = [
   "Withdrawn",
 ];
 
+const statusHistorySchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: stages, required: true },
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    changedByName: { type: String, default: "" },
+    changedByRole: { type: String, default: "" },
+    note: { type: String, default: "" },
+    changedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const applicationSchema = new mongoose.Schema(
   {
     jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
     jobTitle: { type: String, required: true },
     company: { type: String, required: true },
+    location: { type: String, default: "" },
+    mode: { type: String, default: "Hybrid" },
     candidateId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -23,23 +37,35 @@ const applicationSchema = new mongoose.Schema(
     },
     candidateName: { type: String, required: true },
     candidateEmail: { type: String, required: true },
+    candidatePhone: { type: String, default: "" },
+    candidateProfile: {
+      location: String,
+      bio: String,
+      skills: [String],
+      experience: String,
+      avatarUrl: String,
+    },
     recruiterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+    recruiterName: { type: String, default: "" },
     resumeUrl: String,
+    resumeName: String,
     coverLetter: String,
     answers: [{ questionId: String, question: String, answer: String }],
     status: { type: String, enum: stages, default: "Applied" },
+    statusHistory: [statusHistorySchema],
     recruiterNotes: { type: String, default: "" },
-    score: { type: Number, default: 78 },
+    score: { type: Number, default: 82 },
   },
   { timestamps: true },
 );
 
 applicationSchema.index({ candidateId: 1, jobId: 1 }, { unique: true });
 applicationSchema.index({ recruiterId: 1, status: 1 });
+applicationSchema.index({ jobId: 1, createdAt: -1 });
 
 export const Application =
   mongoose.models.Application ||
@@ -50,22 +76,47 @@ export const createApplication = async ({
   candidate,
   coverLetter,
   resumeUrl,
+  resumeName,
   answers = [],
 }) => {
+  const initialHistory = [
+    {
+      status: "Applied",
+      changedBy: candidate.id || candidate._id,
+      changedByName: candidate.name,
+      changedByRole: "candidate",
+      note: "Application submitted",
+      changedAt: new Date(),
+    },
+  ];
+
   const payload = {
-    jobId: job.id,
+    jobId: job.id || job._id,
     jobTitle: job.title,
     company: job.company,
-    candidateId: candidate.id,
+    location: job.location || "",
+    mode: job.mode || "Hybrid",
+    candidateId: candidate.id || candidate._id,
     candidateName: candidate.name,
     candidateEmail: candidate.email,
+    candidatePhone: candidate.phone || "",
+    candidateProfile: {
+      location: candidate.profile?.location || "",
+      bio: candidate.profile?.bio || "",
+      skills: candidate.profile?.skills || candidate.skills || [],
+      experience: candidate.profile?.experience || "",
+      avatarUrl: candidate.profile?.avatarUrl || candidate.profileImage || "",
+    },
     recruiterId: job.recruiterId,
+    recruiterName: job.recruiterName || "",
     resumeUrl: resumeUrl || candidate.profile?.resumeUrl || null,
+    resumeName: resumeName || candidate.profile?.resumeName || "Resume",
     coverLetter,
     answers,
     status: "Applied",
+    statusHistory: initialHistory,
     recruiterNotes: "",
-    score: 78,
+    score: Math.floor(Math.random() * 15) + 80,
   };
 
   if (mongoose.connection.readyState === 1) {
@@ -75,8 +126,10 @@ export const createApplication = async ({
 
   const application = {
     id: `a${Date.now()}`,
+    _id: `a${Date.now()}`,
     ...payload,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   fallbackApplications.push(application);
   return application;
@@ -85,47 +138,100 @@ export const createApplication = async ({
 export const applicationsForCandidate = async (candidateId) => {
   if (mongoose.connection.readyState === 1) {
     const applications = await Application.find({ candidateId })
+      .populate("jobId", "title company location mode salary category status")
       .sort({ createdAt: -1 })
       .lean();
     return applications.map((application) => ({
       ...application,
       id: String(application._id),
+      job: application.jobId ? { ...application.jobId, id: String(application.jobId._id) } : null,
     }));
   }
 
-  return fallbackApplications.filter(
-    (application) => application.candidateId === candidateId,
-  );
+  return fallbackApplications
+    .filter((application) => String(application.candidateId) === String(candidateId))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
-export const allApplications = async () => {
+export const allApplicationsForRecruiter = async (recruiterId, filterParams = {}) => {
+  const { jobId, status } = filterParams;
+
   if (mongoose.connection.readyState === 1) {
-    const applications = await Application.find({})
+    const query = { recruiterId };
+    if (jobId) query.jobId = jobId;
+    if (status && status !== "All") query.status = status;
+
+    const applications = await Application.find(query)
+      .populate("jobId", "title company location mode status")
       .sort({ createdAt: -1 })
       .lean();
+
     return applications.map((application) => ({
       ...application,
       id: String(application._id),
+      job: application.jobId ? { ...application.jobId, id: String(application.jobId._id) } : null,
     }));
   }
 
-  return fallbackApplications;
+  return fallbackApplications.filter((app) => {
+    if (String(app.recruiterId) !== String(recruiterId)) return false;
+    if (jobId && String(app.jobId) !== String(jobId)) return false;
+    if (status && status !== "All" && app.status !== status) return false;
+    return true;
+  });
 };
 
-export const setStage = async (id, status) => {
+export const getApplicationById = async (id) => {
   if (mongoose.connection.readyState === 1) {
-    const application = await Application.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true },
-    ).lean();
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    const application = await Application.findById(id)
+      .populate("jobId")
+      .populate("candidateId", "name email phone profile skills profileImage")
+      .populate("recruiterId", "name email")
+      .lean();
     return application ? { ...application, id: String(application._id) } : null;
   }
 
+  return fallbackApplications.find((app) => String(app.id) === String(id) || String(app._id) === String(id)) || null;
+};
+
+export const setStage = async (id, status, user, note = "") => {
+  if (mongoose.connection.readyState === 1) {
+    const application = await Application.findById(id);
+    if (!application) return null;
+
+    application.status = status;
+    application.statusHistory.push({
+      status,
+      changedBy: user.id || user._id,
+      changedByName: user.name,
+      changedByRole: user.role,
+      note: note || `Status updated to ${status}`,
+      changedAt: new Date(),
+    });
+    if (note && user.role === "recruiter") {
+      application.recruiterNotes = note;
+    }
+    await application.save();
+    return { ...application.toObject(), id: String(application._id) };
+  }
+
   const item = fallbackApplications.find(
-    (application) => application.id === id,
+    (application) => String(application.id) === String(id) || String(application._id) === String(id),
   );
-  if (item) item.status = status;
+  if (item) {
+    item.status = status;
+    item.statusHistory = item.statusHistory || [];
+    item.statusHistory.push({
+      status,
+      changedBy: user.id,
+      changedByName: user.name,
+      changedByRole: user.role,
+      note: note || `Status updated to ${status}`,
+      changedAt: new Date().toISOString(),
+    });
+    item.updatedAt = new Date().toISOString();
+  }
   return item;
 };
 
@@ -135,19 +241,39 @@ export const withdraw = async (id, candidateId) => {
     if (
       !application ||
       !["Applied", "Under Review"].includes(application.status)
-    )
+    ) {
       return null;
+    }
     application.status = "Withdrawn";
+    application.statusHistory.push({
+      status: "Withdrawn",
+      changedBy: candidateId,
+      changedByName: application.candidateName,
+      changedByRole: "candidate",
+      note: "Application withdrawn by candidate",
+      changedAt: new Date(),
+    });
     await application.save();
     return { ...application.toObject(), id: String(application._id) };
   }
 
   const item = fallbackApplications.find(
     (application) =>
-      application.id === id && application.candidateId === candidateId,
+      (String(application.id) === String(id) || String(application._id) === String(id)) &&
+      String(application.candidateId) === String(candidateId),
   );
   if (item && ["Applied", "Under Review"].includes(item.status)) {
     item.status = "Withdrawn";
+    item.statusHistory = item.statusHistory || [];
+    item.statusHistory.push({
+      status: "Withdrawn",
+      changedBy: candidateId,
+      changedByName: item.candidateName,
+      changedByRole: "candidate",
+      note: "Application withdrawn by candidate",
+      changedAt: new Date().toISOString(),
+    });
+    return item;
   }
-  return item;
+  return null;
 };

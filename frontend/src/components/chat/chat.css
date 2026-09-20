@@ -1,0 +1,97 @@
+/* chat.css - CareerHub Modern Chat Styles & Theme Integration */
+
+:root {
+  --chat-bg: #f8fafc;
+  --chat-panel: #ffffff;
+  --chat-border: #e2e8f0;
+  --chat-text-primary: #0f172a;
+  --chat-text-secondary: #64748b;
+  --chat-text-muted: #94a3b8;
+  --chat-input-bg: #f1f5f9;
+  --chat-bubble-in: #ffffff;
+  --chat-bubble-in-border: #e2e8f0;
+  --chat-bubble-out: #635bff;
+  --chat-bubble-out-text: #ffffff;
+  --chat-hover: #f1f5f9;
+  --chat-active: #ede9fe;
+}
+
+.dark {
+  --chat-bg: #0b0f19;
+  --chat-panel: #111827;
+  --chat-border: #1f2937;
+  --chat-text-primary: #f9fafb;
+  --chat-text-secondary: #9ca3af;
+  --chat-text-muted: #6b7280;
+  --chat-input-bg: #1f2937;
+  --chat-bubble-in: #1f2937;
+  --chat-bubble-in-border: #374151;
+  --chat-bubble-out: #635bff;
+  --chat-bubble-out-text: #ffffff;
+  --chat-hover: #1f2937;
+  --chat-active: #312e81;
+}
+
+/* Custom Chat Scrollbar */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.dark .chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.7);
+}
+
+/* Chat animations */
+@keyframes bubblePop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-bubble-animate {
+  animation: bubblePop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+.typing-dot {
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}

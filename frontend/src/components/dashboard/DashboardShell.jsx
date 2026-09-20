@@ -5,6 +5,7 @@ import {
   FiSettings,
   FiLayers,
   FiPlusCircle,
+  FiMessageSquare,
 } from "react-icons/fi";
 import { NavLink, Outlet } from "react-router-dom";
 
@@ -20,9 +21,13 @@ export default function DashboardShell() {
       </NavLink>
       <NavLink className={navClass} to="/applications">
         <FiLayers />
-        {user.role === "recruiter" ? "Applicants" : "Applications"}
+        {user?.role === "recruiter" ? "Applicants" : "Applications"}
       </NavLink>
-      {user.role === "recruiter" && (
+      <NavLink className={navClass} to="/messages">
+        <FiMessageSquare />
+        Messages
+      </NavLink>
+      {user?.role === "recruiter" && (
         <>
           <NavLink className={navClass} to="/manage-jobs">
             <FiPlusCircle />
@@ -46,13 +51,13 @@ export default function DashboardShell() {
   );
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-5 sm:py-8 lg:grid-cols-[210px_1fr]">
-      <aside className="hidden rounded-2xl bg-ink p-5 text-white shadow-xl lg:block">
+    <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 grid gap-6 lg:grid-cols-[240px_1fr]">
+      <aside className="hidden rounded-2xl bg-ink p-5 text-white shadow-xl lg:block self-start sticky top-20">
         <p className="font-mono-display text-xs uppercase tracking-widest text-slate-300">
-          {user.role} workspace
+          {user?.role} workspace
         </p>
         <h2 className="mb-6 mt-1 text-lg font-bold">
-          Welcome, {user.name.split(" ")[0]}
+          Welcome, {user?.name?.split(" ")[0] || "User"}
         </h2>
         <nav aria-label="Dashboard navigation" className="space-y-2 text-sm">
           {links}
@@ -64,7 +69,7 @@ export default function DashboardShell() {
       >
         {links}
       </nav>
-      <main className="min-w-0">
+      <main className="min-w-0 w-full">
         <Outlet />
       </main>
     </div>

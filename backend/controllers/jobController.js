@@ -6,15 +6,42 @@ import {
   removeJob,
   updateJob,
 } from "../models/jobModel.js";
+import { Application } from "../models/applicationModel.js";
 
 export const jobs = async (req, res) => {
-  const jobs = await listJobs(req.query.search);
-  return res.json({ jobs });
+  const result = await listJobs({
+    search: req.query.search,
+    category: req.query.category,
+    mode: req.query.mode,
+    location: req.query.location,
+    experience: req.query.experience,
+    company: req.query.company,
+    skills: req.query.skills,
+    sort: req.query.sort,
+    page: req.query.page,
+    limit: req.query.limit,
+  });
+
+  return res.json(result);
 };
 
 export const recruiterJobs = async (req, res) => {
-  const jobs = await listJobsForRecruiter(req.user.id);
-  return res.json({ jobs });
+  const rawJobs = await listJobsForRecruiter(req.user.id);
+
+  // Attach applicant counts
+  const jobsWithCount = await Promise.all(
+    rawJobs.map(async (j) => {
+      let applicantsCount = 0;
+      try {
+        applicantsCount = await Application.countDocuments({ jobId: j.id || j._id });
+      } catch {
+        applicantsCount = 0;
+      }
+      return { ...j, applicantsCount };
+    }),
+  );
+
+  return res.json({ jobs: jobsWithCount });
 };
 
 export const job = async (req, res) => {
@@ -40,13 +67,13 @@ export const create = async (req, res) => {
 export const edit = async (req, res) => {
   const item = await updateJob(req.params.id, req.body, req.user.id);
   return item
-    ? res.json({ job: item })
+    ? res.json({ job: item, message: "Job updated successfully." })
     : res.status(404).json({ message: "Job not found or cannot be edited." });
 };
 
 export const destroy = async (req, res) => {
   const deleted = await removeJob(req.params.id, req.user.id);
   return deleted
-    ? res.json({ message: "Job deleted." })
+    ? res.json({ message: "Job deleted successfully." })
     : res.status(404).json({ message: "Job not found or cannot be deleted." });
 };

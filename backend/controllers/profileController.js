@@ -1,20 +1,12 @@
-import { configured, cloudinary } from "../config/cloudinary.js";
 import { updateProfile, publicUser } from "../models/userModel.js";
+import { uploadFile } from "../services/uploadService.js";
 
-const missing = (res) =>
-  res.status(503).json({
-    message:
-      "File uploads are unavailable: Cloudinary is not configured on this server.",
-  });
-
-const send = (file, folder) =>
-  new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: folder.includes("resumes") ? "raw" : "image" },
-      (error, result) => (error ? reject(error) : resolve(result)),
-    );
-    stream.end(file.buffer);
-  });
+const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const resumeTypes = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
 export const update = async (req, res) => {
   const allowed = ["phone", "location", "bio", "experience", "skills"];
@@ -34,39 +26,35 @@ export const update = async (req, res) => {
 };
 
 export const avatar = async (req, res) => {
-  if (!configured) return missing(res);
   if (
     !req.file ||
-    !["image/jpeg", "image/png", "image/webp"].includes(req.file.mimetype) ||
+    !imageTypes.includes(req.file.mimetype) ||
     req.file.size > 5 * 1024 * 1024
   ) {
     return res
       .status(400)
-      .json({ message: "Upload a JPG, PNG, or WEBP image under 5 MB." });
+      .json({ message: "Upload a JPG, PNG, WEBP, or GIF image under 5 MB." });
   }
 
   try {
-    const result = await send(req.file, "careerhub/avatars");
+    const result = await uploadFile(req.file, "avatars");
     const user = await updateProfile(req.user.id, {
-      avatarUrl: result.secure_url,
+      avatarUrl: result.url,
     });
-    return res.json({ url: result.secure_url, user: publicUser(user) });
-  } catch {
+    return res.json({ url: result.url, user: publicUser(user) });
+  } catch (error) {
+    console.error("Avatar upload error:", error);
     return res
-      .status(502)
+      .status(500)
       .json({ message: "Avatar upload failed. Please try again." });
   }
 };
 
 export const resume = async (req, res) => {
-  if (!configured) return missing(res);
   if (
     !req.file ||
-    ![
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ].includes(req.file.mimetype)
+    !resumeTypes.includes(req.file.mimetype) ||
+    req.file.size > 10 * 1024 * 1024
   ) {
     return res
       .status(400)
@@ -74,15 +62,16 @@ export const resume = async (req, res) => {
   }
 
   try {
-    const result = await send(req.file, "careerhub/resumes");
+    const result = await uploadFile(req.file, "resumes");
     await updateProfile(req.user.id, {
-      resumeUrl: result.secure_url,
+      resumeUrl: result.url,
       resumeName: req.file.originalname,
     });
-    return res.json({ url: result.secure_url, name: req.file.originalname });
-  } catch {
+    return res.json({ url: result.url, name: req.file.originalname });
+  } catch (error) {
+    console.error("Resume upload error:", error);
     return res
-      .status(502)
+      .status(500)
       .json({ message: "Resume upload failed. Please try again." });
   }
 };

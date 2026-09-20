@@ -3,11 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FiArrowLeft, FiBriefcase, FiCheckCircle } from "react-icons/fi";
 import client from "../api/client";
+import CustomSelect from "../components/common/CustomSelect";
 
 const initialForm = {
   title: "",
   company: "",
   location: "",
+  category: "Engineering",
   mode: "Hybrid",
   experience: "",
   salary: "",
@@ -15,6 +17,22 @@ const initialForm = {
   skills: "",
   requirements: "",
 };
+
+const CATEGORY_OPTIONS = [
+  { label: "Engineering", value: "Engineering" },
+  { label: "Design", value: "Design" },
+  { label: "Product", value: "Product" },
+  { label: "Data", value: "Data" },
+  { label: "DevOps", value: "DevOps" },
+  { label: "Marketing", value: "Marketing" },
+  { label: "Sales", value: "Sales" },
+];
+
+const MODE_OPTIONS = [
+  { label: "Hybrid", value: "Hybrid" },
+  { label: "Remote", value: "Remote" },
+  { label: "On-site", value: "On-site" },
+];
 
 const splitLines = (value) =>
   value
@@ -40,6 +58,7 @@ export default function PostJobPage() {
           title: job.title || "",
           company: job.company || "",
           location: job.location || "",
+          category: job.category || "Engineering",
           mode: job.mode || "Hybrid",
           experience: job.experience || "",
           salary: job.salary || "",
@@ -57,8 +76,7 @@ export default function PostJobPage() {
       .finally(() => setLoading(false));
   }, [editing, id, navigate]);
 
-  const updateField = (event) => {
-    const { name, value } = event.target;
+  const updateField = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
@@ -79,6 +97,7 @@ export default function PostJobPage() {
         title: form.title.trim(),
         company: form.company.trim(),
         location: form.location.trim(),
+        category: form.category,
         mode: form.mode,
         experience: form.experience.trim() || "Not specified",
         salary: form.salary.trim() || "Not disclosed",
@@ -106,12 +125,12 @@ export default function PostJobPage() {
       <button
         type="button"
         onClick={() => navigate("/dashboard")}
-        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand"
+        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand dark:text-slate-400 dark:hover:text-brand"
       >
         <FiArrowLeft /> Back to dashboard
       </button>
 
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-ink to-brand p-6 text-white shadow-xl sm:p-8">
+      <div className="overflow-hidden rounded-3xl bg-linear-to-r from-ink to-brand p-6 text-white shadow-xl sm:p-8">
         <div className="flex items-start gap-4">
           <div className="rounded-2xl bg-white/15 p-3 text-2xl">
             <FiBriefcase />
@@ -153,10 +172,10 @@ export default function PostJobPage() {
                 <input
                   name="title"
                   value={form.title}
-                  onChange={updateField}
+                  onChange={(e) => updateField("title", e.target.value)}
                   required
                   placeholder="e.g. Senior Frontend Engineer"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
               <label className="text-sm font-semibold">
@@ -164,9 +183,9 @@ export default function PostJobPage() {
                 <input
                   name="company"
                   value={form.company}
-                  onChange={updateField}
+                  onChange={(e) => updateField("company", e.target.value)}
                   placeholder="Defaults to your name"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
               <label className="text-sm font-semibold">
@@ -174,33 +193,36 @@ export default function PostJobPage() {
                 <input
                   name="location"
                   value={form.location}
-                  onChange={updateField}
+                  onChange={(e) => updateField("location", e.target.value)}
                   required
                   placeholder="e.g. Bengaluru or Remote"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
-              <label className="text-sm font-semibold">
-                Work mode
-                <select
-                  name="mode"
+              <div>
+                <CustomSelect
+                  label="Category"
+                  value={form.category}
+                  options={CATEGORY_OPTIONS}
+                  onChange={(val) => updateField("category", val)}
+                />
+              </div>
+              <div>
+                <CustomSelect
+                  label="Work Mode"
                   value={form.mode}
-                  onChange={updateField}
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
-                >
-                  <option>Hybrid</option>
-                  <option>Remote</option>
-                  <option>On-site</option>
-                </select>
-              </label>
+                  options={MODE_OPTIONS}
+                  onChange={(val) => updateField("mode", val)}
+                />
+              </div>
               <label className="text-sm font-semibold">
                 Experience
                 <input
                   name="experience"
                   value={form.experience}
-                  onChange={updateField}
+                  onChange={(e) => updateField("experience", e.target.value)}
                   placeholder="e.g. 3–5 years"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
               <label className="text-sm font-semibold">
@@ -208,9 +230,9 @@ export default function PostJobPage() {
                 <input
                   name="salary"
                   value={form.salary}
-                  onChange={updateField}
+                  onChange={(e) => updateField("salary", e.target.value)}
                   placeholder="e.g. ₹18–24 LPA"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
             </div>
@@ -226,12 +248,12 @@ export default function PostJobPage() {
                 <textarea
                   name="description"
                   value={form.description}
-                  onChange={updateField}
+                  onChange={(e) => updateField("description", e.target.value)}
                   required
                   minLength={30}
                   rows={7}
                   placeholder="Describe the team, impact, responsibilities, and what success looks like."
-                  className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                  className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                 />
               </label>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -240,10 +262,10 @@ export default function PostJobPage() {
                   <textarea
                     name="skills"
                     value={form.skills}
-                    onChange={updateField}
+                    onChange={(e) => updateField("skills", e.target.value)}
                     rows={4}
                     placeholder={"React, Node.js\nTypeScript"}
-                    className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                    className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                   />
                   <span className="mt-1 block text-xs font-normal text-slate-500">
                     Separate skills with commas or new lines.
@@ -254,10 +276,10 @@ export default function PostJobPage() {
                   <textarea
                     name="requirements"
                     value={form.requirements}
-                    onChange={updateField}
+                    onChange={(e) => updateField("requirements", e.target.value)}
                     rows={4}
                     placeholder={"3+ years of experience\nStrong communication"}
-                    className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600"
+                    className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-transparent p-3 outline-none focus:border-brand dark:border-slate-600 dark:text-white"
                   />
                   <span className="mt-1 block text-xs font-normal text-slate-500">
                     Add one requirement per line.

@@ -39,7 +39,7 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-5">
+      <div className="flex min-h-16 w-full items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         <LogoMark />
         <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">
           <NavLink className={navClass} to="/">
@@ -49,9 +49,14 @@ export default function SiteHeader() {
             Explore jobs
           </NavLink>
           {user && (
-            <NavLink className={navClass} to="/dashboard">
-              Dashboard
-            </NavLink>
+            <>
+              <NavLink className={navClass} to="/dashboard">
+                Dashboard
+              </NavLink>
+              <NavLink className={navClass} to="/messages">
+                Messages
+              </NavLink>
+            </>
           )}
         </nav>
         <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
@@ -111,7 +116,7 @@ export default function SiteHeader() {
             aria-label="Mobile navigation"
             className="absolute inset-x-0 top-full z-40 border-b border-t border-slate-200/80 bg-white px-4 py-3 shadow-lg dark:border-slate-800 dark:bg-slate-900 lg:hidden"
           >
-            <div className="mx-auto flex max-w-7xl flex-col gap-1 text-sm font-medium">
+            <div className="flex w-full flex-col gap-1 text-sm font-medium">
               <NavLink className={navClass} to="/">
                 Home
               </NavLink>
@@ -124,7 +129,10 @@ export default function SiteHeader() {
                     Dashboard
                   </NavLink>
                   <NavLink className={navClass} to="/applications">
-                    {user.role === "recruiter" ? "Applicants" : "Applications"}
+                    {user?.role === "recruiter" ? "Applicants" : "Applications"}
+                  </NavLink>
+                  <NavLink className={navClass} to="/messages">
+                    Messages
                   </NavLink>
                   <NavLink className={navClass} to="/profile">
                     Profile
@@ -132,7 +140,7 @@ export default function SiteHeader() {
                   <NavLink className={navClass} to="/settings">
                     Settings
                   </NavLink>
-                  {user.role === "recruiter" && (
+                  {user?.role === "recruiter" && (
                     <>
                       <NavLink className={navClass} to="/manage-jobs">
                         Manage jobs

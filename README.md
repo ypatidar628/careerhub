@@ -1,64 +1,261 @@
-<<<<<<< HEAD
-# careerhub
-=======
-# CareerHub
+# CareerHub - Modern Job Discovery & Recruitment Platform
 
-CareerHub is a full-stack career and hiring platform with a responsive React application and a production-oriented Express API. The backend has been refactored to a cleaner structure, with MongoDB connectivity, model validation, role-based access, and environment-driven configuration while preserving the existing frontend API contract.
+CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching with custom dropdowns, and a dedicated **real-time conversation history and chat system** powered by Socket.IO.
 
-## Stack
+---
 
-- Frontend: React, Vite, React Router, Redux Toolkit, React Hook Form + Zod, Tailwind, Recharts, GSAP, Axios, React Hot Toast.
-- Backend: Express (ES modules), Mongoose, MongoDB, JWT, bcryptjs, Helmet, CORS, rate limiting, Multer, and Cloudinary.
+## 🌟 Key Features
 
-## Install and run
+### 1. Job Discovery & Saved Jobs
+- **Dynamic Search & Multi-Filters**: Debounced search by title, skill, company, or keyword, with filters for Category, Work Mode (Remote, Hybrid, Onsite), Experience Level, and Salary/Date sorting.
+- **Candidate Bookmarking**: Candidates can save/bookmark jobs with instant state toggling and view them under their profile / saved jobs tab.
+- **Interactive Job Cards**: Quick view badges, mode chips, salary tags, application modal trigger, and recruiter insights.
 
-Requirements: Node.js 18+ and npm.
+### 2. Recruiter & Candidate Application Pipelines
+- **Pipeline Tracking**: Visual status timeline (`Applied` → `Under Review` → `Shortlisted` → `Interview` → `Selected` / `Rejected`).
+- **Recruiter Applicant Management**: Filter applicants by posted job, change candidate stages with optional status update notes, and inspect attached resumes with one click.
+- **Application Details Inspector**: Detailed modal with candidate profile, resume preview, match score, cover letter, and direct chat trigger.
+
+### 3. Real-Time Conversation History & Chat
+- **Two-Panel Conversation History (`/messages`)**:
+  - **Left Panel**: Searchable conversation list by candidate name, recruiter name, job title, company, and message text, showing live online/offline presence (`🟢`/`⚪`), last message preview (text/images/documents), timestamps, and animated unread badges.
+  - **Right Panel (Chat Window)**: Sticky header with user presence and "View Application" button, application context card, date separators (`Today`, `Yesterday`, `18 Sep 2026`), and smart auto-scroll with floating `↓ New messages` button.
+- **Modern Message Bubbles**:
+  - Compact layout (70–75% max width) with distinct incoming/outgoing styling.
+  - Image attachments with lightbox modal preview.
+  - Document attachments (PDF, DOC, DOCX <= 10MB) with download button and formatted file sizes.
+  - Hover actions: Copy message text and Reply to quote previous messages.
+  - Read status ticks (`✓` sent, `✓✓` read).
+- **Interactive Features**:
+  - Real-time animated typing indicator (`Rahul is typing...` with 3 bouncing dots).
+  - Sticky composer with <kbd>Enter</kbd> (send), <kbd>Shift</kbd>+<kbd>Enter</kbd> (new line), inline emoji selector (👍, 👋, 😊, 💼, 🎯, 🚀, 🙌), and file uploader.
+  - Mobile responsive: seamless toggle between conversation list and full-width chat screen.
+  - Duplicate conversation protection: Safe idempotent conversation retrieval with no `E11000` duplicate key errors.
+
+### 4. Dark Mode & Accessibility
+- Complete light/dark theme support with custom theme-aware dropdown components (`CustomSelect.jsx`) and CSS variables in `chat.css`.
+- High-contrast text, smooth transitions, themed scrollbars, and accessible keyboard navigation.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 18, Vite
+- **State Management**: Redux Toolkit, Context API (`AppContext`, `SocketContext`)
+- **Styling**: Tailwind CSS, Material UI icons & tooltip, custom CSS variables
+- **Real-Time Client**: `socket.io-client`
+- **Forms & Validation**: React Hook Form, Zod
+- **Animations & Visuals**: GSAP, Recharts, React Hot Toast
+
+### Backend
+- **Runtime & Framework**: Node.js (ES Modules), Express
+- **Database**: MongoDB with Mongoose ODM
+- **Real-Time Server**: Socket.IO with JWT handshake authentication
+- **Authentication**: JWT (JSON Web Tokens), bcryptjs password hashing
+- **File Uploads**: Multer with local disk storage / Cloudinary integration
+- **Security & Reliability**: Helmet, CORS, rate limiting, and graceful shutdown handlers
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **MongoDB**: Local MongoDB instance running on `mongodb://localhost:27017` or a MongoDB Atlas URI
+
+### 1. Clone & Configure Environment
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd carrerHub
+
+# Configure Backend Environment
 cp backend/.env.example backend/.env
+
+# Configure Frontend Environment
 cp frontend/.env.example frontend/.env
-npm install
+```
+
+#### Backend `.env` Configuration
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/careerhub
+JWT_SECRET=your_super_secret_jwt_key_here
+CLIENT_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+
+# Optional: Cloudinary for cloud uploads (defaults to local /uploads if not set)
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
+```
+
+#### Frontend `.env` Configuration
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### 2. Install Dependencies
+
+```bash
+# Install backend packages
 npm install --prefix backend
+
+# Install frontend packages
 npm install --prefix frontend
+```
+
+### 3. Start Development Servers
+
+```bash
+# Terminal 1: Run Backend API & Socket.IO (Port 5000)
+cd backend
+npm run dev
+
+# Terminal 2: Run Frontend Vite Dev Server (Port 5173)
+cd frontend
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173`; the API runs at `http://localhost:5000`. `npm run build` creates a production frontend build. Run `npm run lint --prefix frontend` for linting.
+- **Frontend App**: `http://localhost:5173`
+- **Backend API & WebSockets**: `http://localhost:5000`
 
-Set a long unique `JWT_SECRET` in `backend/.env` and provide a valid `MONGODB_URI` for your local instance or MongoDB Atlas. For uploads, set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Without them, upload routes return a clear `503` and the frontend retains its local avatar preview.
+---
 
-## Development-only demo accounts
+## 👥 Demo Test Accounts
 
 | Role | Email | Password |
 |---|---|---|
-| Candidate | candidate@careerhub.dev | password123 |
-| Recruiter | recruiter@careerhub.dev | password123 |
-| Admin | admin@careerhub.dev | password123 |
+| **Candidate** | `candidate@careerhub.dev` | `Password123!` |
+| **Recruiter** | `recruiter@careerhub.dev` | `Password123!` |
+| **Admin** | `admin@careerhub.dev` | `Password123!` |
 
-## API
+---
 
-| Method | Endpoint | Access |
+## 📡 REST API Reference
+
+### Authentication
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register candidate or recruiter | Public |
+| `POST` | `/api/auth/login` | Authenticate user & receive JWT token | Public |
+| `POST` | `/api/auth/logout` | Clear authentication cookie | Public |
+| `GET` | `/api/auth/me` | Fetch authenticated user profile | Authenticated |
+
+### Jobs Discovery & Management
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/jobs` | Discover jobs with search, category, mode, & experience filters | Public |
+| `GET` | `/api/jobs/:id` | Get single job details | Public |
+| `GET` | `/api/jobs/mine` | List jobs posted by current recruiter | Recruiter |
+| `POST` | `/api/jobs` | Post a new job | Recruiter |
+| `PATCH` | `/api/jobs/:id` | Edit existing job | Recruiter |
+| `DELETE` | `/api/jobs/:id` | Delete job posting | Recruiter |
+
+### Saved Jobs (Bookmarks)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/saved-jobs` | List all saved jobs for current candidate | Candidate |
+| `GET` | `/api/saved-jobs/ids` | Get array of saved job IDs | Candidate |
+| `POST` | `/api/saved-jobs/:id` | Save/bookmark a job | Candidate |
+| `DELETE` | `/api/saved-jobs/:id` | Remove job from saved list | Candidate |
+
+### Applications & Pipeline
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `POST` | `/api/jobs/:jobId/applications` | Submit application with cover letter & resume | Candidate |
+| `GET` | `/api/applications/mine` | List submitted applications for candidate | Candidate |
+| `GET` | `/api/applications` | List applicant pipeline with job/status filters | Recruiter / Admin |
+| `GET` | `/api/applications/:id` | Get single application details | Authenticated |
+| `PATCH` | `/api/applications/:id` | Update applicant stage (Applied, Review, Interview, etc.) | Recruiter / Admin |
+| `PATCH` | `/api/applications/:id/withdraw` | Withdraw candidate application | Candidate |
+
+### Real-Time Chat & Conversations
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/api/conversations` | List user conversations with unread counters & details | Authenticated |
+| `GET` | `/api/conversations/:id` | Get single conversation details | Authenticated |
+| `GET` | `/api/conversations/application/:applicationId` | Fetch conversation linked to an application | Authenticated |
+| `POST` | `/api/applications/:applicationId/conversation` | Idempotent find/create conversation for application | Authenticated |
+| `GET` | `/api/conversations/:id/messages` | Retrieve conversation message history & mark read | Authenticated |
+| `POST` | `/api/conversations/:id/messages` | Send a message with optional file attachments | Authenticated |
+| `PATCH` | `/api/conversations/:id/read` | Mark conversation messages as read | Authenticated |
+| `POST` | `/api/upload/attachment` | Upload document (PDF/DOC/DOCX) or image (JPG/PNG) <= 10MB | Authenticated |
+
+---
+
+## ⚡ Socket.IO Events Reference
+
+| Event Name | Direction | Payload / Description |
 |---|---|---|
-| GET | `/api/health` | Public |
-| POST | `/api/auth/register`, `/api/auth/login`, `/api/auth/logout` | Public |
-| GET | `/api/auth/me` | Authenticated |
-| GET | `/api/jobs`, `/api/jobs/:id` | Public |
-| GET | `/api/notifications`, `/api/messages`, `/api/dashboard` | Authenticated |
-| POST | `/api/profile/avatar`, `/api/profile/resume` | Authenticated |
+| `connection` | Client → Server | Connect with JWT handshake auth |
+| `user_status_changed` | Server → Client | Broadcasts user online/offline presence |
+| `online_users_list` | Server → Client | Array of active online user IDs |
+| `join_conversation` | Client → Server | `{ conversationId }` - Join conversation room |
+| `leave_conversation` | Client → Server | `{ conversationId }` - Leave conversation room |
+| `send_message` | Client → Server | `{ conversationId, text, attachments }` |
+| `receive_message` | Server → Client | `{ conversationId, message }` in real-time |
+| `new_message_notification` | Server → Client | Real-time notification for participants outside room |
+| `typing` / `typing_start` | Client → Server | Broadcast typing indicator to conversation room |
+| `stop_typing` / `typing_stop` | Client → Server | Clear typing indicator |
+| `mark_as_read` | Client → Server | `{ conversationId }` - Mark unread messages |
+| `messages_marked_read` | Server → Client | `{ conversationId, readByUserId }` |
 
-Authentication is kept in a seven-day HTTP-only cookie, with Bearer-token support for API clients. The backend now initializes a MongoDB connection on startup and keeps the project ready for a real persistence layer without breaking the existing frontend API contract. In production, set HTTPS, a restrictive `FRONTEND_URL`, strong secrets, and non-demo users; do not use development credentials.
+---
 
-## Layout
+## 📁 Project Structure
 
+```text
+carrerHub/
+├── backend/
+│   ├── config/              # App, Database, Env, and Multer upload configurations
+│   ├── controllers/         # Auth, Job, Application, Conversation, Dashboard, SavedJobs
+│   ├── middleware/          # JWT auth and Role-based authorization
+│   ├── models/              # User, Job, Application, Conversation, Message, Notification
+│   ├── routes/              # Express API route declarations
+│   ├── services/            # Upload and email notification services
+│   ├── sockets/             # Socket.IO lifecycle, presence, and chat events
+│   ├── uploads/             # Local attachments, avatars, and resumes storage
+│   └── index.js             # HTTP server entry point with graceful shutdown
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/             # Axios client singleton with JWT interceptors
+│   │   ├── assets/          # Static illustrations and branding assets
+│   │   ├── components/
+│   │   │   ├── applications/# Timeline, StatusBadge, ApplicationDetailsModal
+│   │   │   ├── auth/        # ProtectedRoute, RoleRoute, LogoutButton
+│   │   │   ├── chat/        # ConversationHistory, ChatWindow, MessageBubble, ChatInput, TypingIndicator, FileUploader, chat.css
+│   │   │   ├── common/      # CustomSelect, StatCard, SectionHeading, LogoMark
+│   │   │   ├── dashboard/   # DashboardShell layout
+│   │   │   ├── jobs/        # JobCard, JobFilters, SavedJobs
+│   │   │   └── layout/      # SiteHeader, SiteFooter
+│   │   ├── context/         # AppContext (Dark theme), SocketContext (Real-time events)
+│   │   ├── pages/           # HomePage, JobsPage, JobDetailsPage, ApplicationsPage, MessagesPage, ProfilePage, PostJobPage, SettingsPage, AuthPage
+│   │   ├── socket/          # Socket.IO client manager
+│   │   ├── store/           # Redux Toolkit store and slices
+│   │   └── index.css        # Tailwind directives and custom utility classes
+│   └── package.json
+└── README.md
 ```
-frontend/  React application
-backend/   Express + Mongoose API
+
+---
+
+## 🧪 Build & Production Deployment
+
+```bash
+# Build Frontend Bundle
+cd frontend
+npm run build
+
+# Preview Production Build
+npm run preview
 ```
 
-## Refactor notes
-
-- Existing Express routes and response contracts were kept intact.
-- Database access is centralized in `backend/config/db.js` and Mongoose models.
-- User, job, and application repositories now support MongoDB-backed persistence while keeping the current API behavior stable.
-- The project is ready for further service/controller decomposition and schema expansion as the app grows.
->>>>>>> 8b1acfe (Initial CareerHub application)
+To run the backend in production:
+```bash
+cd backend
+NODE_ENV=production node index.js
+```

@@ -7,6 +7,7 @@ import JobsPage from "./pages/JobsPage";
 import JobDetailsPage from "./pages/JobDetailsPage";
 import DashboardPage from "./pages/DashboardPage";
 import ApplicationsPage from "./pages/ApplicationsPage";
+import MessagesPage from "./pages/MessagesPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import PostJobPage from "./pages/PostJobPage";
@@ -16,9 +17,10 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardShell from "./components/dashboard/DashboardShell";
 import RoleRoute from "./components/auth/RoleRoute";
+
 function Layout() {
   return (
-    <div className="flex min-h-screen min-w-0 flex-col overflow-x-hidden">
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-hidden bg-slate-50/50 text-slate-800 transition-colors duration-200 dark:bg-slate-900 dark:text-slate-100">
       <SiteHeader />
       <div className="min-w-0 flex-1">
         <Outlet />
@@ -27,6 +29,7 @@ function Layout() {
     </div>
   );
 }
+
 export default function App() {
   return (
     <Routes>
@@ -41,6 +44,7 @@ export default function App() {
           <Route element={<DashboardShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/applications" element={<ApplicationsPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route element={<RoleRoute roles={["recruiter"]} />}>
               <Route path="/post-job" element={<PostJobPage />} />
               <Route path="/manage-jobs" element={<ManageJobsPage />} />

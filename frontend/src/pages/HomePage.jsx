@@ -13,10 +13,11 @@ import SectionHeading from "../components/common/SectionHeading";
 import JobCard from "../components/jobs/JobCard";
 import { jobs } from "../data/mockData";
 import careerJourney from "../assets/career-journey-3d.png";
-// A generated 3D illustration plus depth layers gives the landing page a memorable visual identity.
+
 export default function HomePage() {
   const hero = useRef();
   const nav = useNavigate();
+
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -35,24 +36,26 @@ export default function HomePage() {
     }, hero);
     return () => ctx.revert();
   }, []);
+
   return (
-    <>
+    <div className="w-full">
+      {/* Hero Section */}
       <section
         ref={hero}
-        className="relative isolate overflow-hidden bg-[#080b20] px-4 py-12 text-white sm:px-5 sm:py-16 md:py-24"
+        className="relative isolate overflow-hidden bg-[#080b20] px-4 py-12 text-white sm:px-6 sm:py-16 md:py-24 lg:px-8"
       >
         <div className="absolute -left-32 top-10 h-80 w-80 rounded-full bg-brand/30 blur-3xl" />
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-400/15 blur-3xl" />
-        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="w-full grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]">
           <div className="relative z-10">
             <span className="hero-reveal font-mono-display rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs text-cyan-100">
               <FiZap className="mr-2 inline" /> CAREERS, REIMAGINED
             </span>
-            <h1 className="hero-reveal mt-6 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl md:leading-[.98]">
+            <h1 className="hero-reveal mt-6 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl md:leading-[.98]">
               Find work that feels{" "}
               <span className="text-[#b8b4ff]">like your future.</span>
             </h1>
-            <p className="hero-reveal mt-6 max-w-xl text-lg leading-8 text-slate-300">
+            <p className="hero-reveal mt-6 max-w-2xl text-lg leading-8 text-slate-300">
               A more human platform for discovering standout roles, telling your
               story, and moving your career forward.
             </p>
@@ -85,10 +88,10 @@ export default function HomePage() {
               </span>
             </div>
           </div>
-          <div className="hero-reveal relative mx-auto w-full max-w-md">
+          <div className="hero-reveal relative mx-auto w-full max-w-md lg:max-w-none">
             <div className="hero-orbit absolute inset-2 rounded-[2.4rem] border border-dashed border-cyan-200/30" />
             <img
-              className="hero-image relative z-10 w-full rounded-[2rem] border border-white/15 shadow-[0_30px_80px_-20px_rgba(85,91,255,.7)]"
+              className="hero-image relative z-10 w-full max-h-[520px] object-contain rounded-[2rem] border border-white/15 shadow-[0_30px_80px_-20px_rgba(85,91,255,.7)]"
               src={careerJourney}
               alt="A professional moving upward through glowing career opportunities"
             />
@@ -106,32 +109,38 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-5 sm:py-20">
+
+      {/* Curated Opportunities */}
+      <section className="w-full px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
         <SectionHeading
           eyebrow="Curated opportunities"
           title="Roles worth showing up for"
           text="Fresh, high-quality openings from teams that are building the future."
         />
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {jobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
         </div>
-        <Link
-          to="/jobs"
-          className="mt-8 inline-flex items-center gap-2 font-bold text-brand hover:gap-3"
-        >
-          Explore all jobs <FiArrowRight />
-        </Link>
+        <div className="mt-8">
+          <Link
+            to="/jobs"
+            className="inline-flex items-center gap-2 font-bold text-brand hover:gap-3"
+          >
+            Explore all jobs <FiArrowRight />
+          </Link>
+        </div>
       </section>
-      <section className="bg-ink px-4 py-12 text-white sm:px-5 sm:py-20">
-        <div className="mx-auto max-w-7xl">
+
+      {/* Why CareerHub */}
+      <section className="w-full bg-ink px-4 py-12 text-white sm:px-6 sm:py-20 lg:px-8">
+        <div>
           <SectionHeading
             eyebrow="Why CareerHub"
             title="Built for the whole journey"
             text="A calmer, clearer way for candidates and hiring teams to meet."
           />
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               [
                 "Match with intent",
@@ -158,7 +167,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-4 py-12 text-center sm:px-5 sm:py-20">
+
+      {/* Call to Action */}
+      <section className="w-full px-4 py-12 text-center sm:px-6 sm:py-20 lg:px-8">
         <h2 className="text-2xl font-bold dark:text-white sm:text-3xl">
           Ready to find your next chapter?
         </h2>
@@ -172,6 +183,6 @@ export default function HomePage() {
           Create your profile
         </Link>
       </section>
-    </>
+    </div>
   );
 }
