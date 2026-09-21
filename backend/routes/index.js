@@ -46,15 +46,16 @@ import {
 } from "../controllers/savedJobController.js";
 import { allowRoles, requireAuth } from "../middleware/auth.js";
 import { upload } from "../config/upload.js";
+import { authRateLimiter, uploadRateLimiter } from "../middleware/security.js";
 
 const router = Router();
 
 // Health Check
 router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-// Auth Routes
-router.post("/auth/register", register);
-router.post("/auth/login", login);
+// Auth Routes (Protected with strict brute-force rate limiter)
+router.post("/auth/register", authRateLimiter, register);
+router.post("/auth/login", authRateLimiter, login);
 router.post("/auth/logout", logout);
 router.get("/auth/me", requireAuth, me);
 router.post("/auth/refresh", requireAuth, refresh);
@@ -117,12 +118,14 @@ router.patch("/conversations/:id/read", requireAuth, markRead);
 router.post(
   "/conversations/:id/attachments",
   requireAuth,
+  uploadRateLimiter,
   upload.single("attachment"),
   uploadAttachment,
 );
 router.post(
   "/upload/attachment",
   requireAuth,
+  uploadRateLimiter,
   upload.single("attachment"),
   uploadAttachment,
 );
@@ -132,7 +135,7 @@ router.get("/notifications", requireAuth, getNotifications);
 router.get("/messages", requireAuth, getMessages);
 router.get("/dashboard", requireAuth, dashboard);
 router.patch("/profile", requireAuth, update);
-router.post("/profile/avatar", requireAuth, upload.single("avatar"), avatar);
-router.post("/profile/resume", requireAuth, upload.single("resume"), resume);
+router.post("/profile/avatar", requireAuth, uploadRateLimiter, upload.single("avatar"), avatar);
+router.post("/profile/resume", requireAuth, uploadRateLimiter, upload.single("resume"), resume);
 
 export default router;

@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 import { seedDemoJobs } from "../models/jobModel.js";
 import { seedDemoUsers } from "../models/userModel.js";
+import {
+  autoRecoverAndBackup,
+  startScheduledBackups,
+} from "../services/backupService.js";
 
 const logConnectionState = (state) => {
   const states = {
@@ -43,8 +47,15 @@ export const connectDB = async () => {
     autoIndex: true,
   });
 
+  // Check if database was empty/lost and auto-restore from backup if available,
+  // or take an automated snapshot on server launch
+  await autoRecoverAndBackup();
+
   await seedDemoUsers();
   await seedDemoJobs();
+
+  // Start background auto-backup routine (runs every 12 hours)
+  startScheduledBackups(Number(process.env.AUTO_BACKUP_INTERVAL_HOURS) || 12);
 };
 
 export const closeDB = async () => {

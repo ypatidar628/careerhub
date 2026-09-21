@@ -1,8 +1,8 @@
 # CareerHub - Modern Job Discovery & Recruitment Platform
 
-CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching with custom dropdowns, and a dedicated **real-time conversation history and chat system** powered by Socket.IO.
+CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching, a dedicated **real-time conversation history and chat system** powered by Socket.IO, **automated database backup & disaster recovery**, and **hardened enterprise-grade security**.
 
-----
+---
 
 ## 🌟 Key Features
 
@@ -18,23 +18,33 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 
 ### 3. Real-Time Conversation History & Chat
 - **Two-Panel Conversation History (`/messages`)**:
-  - **Left Panel**: Searchable conversation list by candidate name, recruiter name, job title, company, and message text, showing live online/offline presence (`🟢`/`⚪`), last message preview (text/images/documents), timestamps, and animated unread badges.
-  - **Right Panel (Chat Window)**: Sticky header with user presence and "View Application" button, application context card, date separators (`Today`, `Yesterday`, `18 Sep 2026`), and smart auto-scroll with floating `↓ New messages` button.
+  - **Left Panel**: Searchable conversation list by candidate name, recruiter name, job title, company, and message text, showing live online/offline presence (`🟢`/`⚪`), last message preview, timestamps, and animated unread badges.
+  - **Right Panel (Chat Window)**: Sticky header with user presence and "View Application" button, application context card, date separators (`Today`, `Yesterday`), and smart auto-scroll with floating `↓ New messages` button.
 - **Modern Message Bubbles**:
-  - Compact layout (70–75% max width) with distinct incoming/outgoing styling.
+  - Compact layout with distinct incoming/outgoing styling.
   - Image attachments with lightbox modal preview.
   - Document attachments (PDF, DOC, DOCX <= 10MB) with download button and formatted file sizes.
   - Hover actions: Copy message text and Reply to quote previous messages.
   - Read status ticks (`✓` sent, `✓✓` read).
 - **Interactive Features**:
-  - Real-time animated typing indicator (`Rahul is typing...` with 3 bouncing dots).
-  - Sticky composer with <kbd>Enter</kbd> (send), <kbd>Shift</kbd>+<kbd>Enter</kbd> (new line), inline emoji selector (👍, 👋, 😊, 💼, 🎯, 🚀, 🙌), and file uploader.
+  - Real-time animated typing indicator (`Rahul is typing...`).
+  - Sticky composer with <kbd>Enter</kbd> (send), <kbd>Shift</kbd>+<kbd>Enter</kbd> (new line), inline emoji selector, and file uploader.
   - Mobile responsive: seamless toggle between conversation list and full-width chat screen.
-  - Duplicate conversation protection: Safe idempotent conversation retrieval with no `E11000` duplicate key errors.
 
-### 4. Dark Mode & Accessibility
-- Complete light/dark theme support with custom theme-aware dropdown components (`CustomSelect.jsx`) and CSS variables in `chat.css`.
-- High-contrast text, smooth transitions, themed scrollbars, and accessible keyboard navigation.
+### 4. Automated Database Backup & Disaster Recovery
+- **Automatic Startup Recovery**: If the MongoDB database is empty or data was dropped/lost, the server automatically restores from the latest available backup snapshot upon startup.
+- **Automatic Boot & Scheduled Backups**: Automatically creates a fresh database snapshot whenever the server starts and runs scheduled background backups every 12 hours (configurable).
+- **Snapshot Rotation**: Automatically retains the 10 most recent snapshots and cleans up older ones to protect disk space.
+- **CLI Commands**: Single-command manual database backups and one-click restores (`npm run db:backup` and `npm run db:restore`).
+
+### 5. Enterprise-Grade Security Hardening
+- **NoSQL Injection Defense**: Recursive query sanitization middleware stripping dangerous MongoDB operator keys (`$`, `.`) from request bodies, parameters, and query strings.
+- **Brute-Force & DoS Protection**: Dedicated strict rate limiters for authentication endpoints (`/auth/login`, `/auth/register`) and file upload routes.
+- **Privilege Escalation Protection**: Public registration strictly restricts roles to `"candidate"` or `"recruiter"` (rejects unauthorized `admin` role elevation).
+- **Input Sanitization & Normalization**: Automated email normalization (trim, lowercase, regex validation) and password policy enforcement.
+- **File Upload Security**: Strict MIME-type and extension whitelisting (`.jpg`, `.png`, `.webp`, `.pdf`, `.doc`, `.docx`) preventing malicious script/executable execution.
+- **Production Error Shielding**: Masks sensitive internal stack traces and database error details in production responses.
+- **HTTP Security Headers & CORS Isolation**: Comprehensive `helmet` policy and origin whitelisting.
 
 ---
 
@@ -53,8 +63,9 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 - **Database**: MongoDB with Mongoose ODM
 - **Real-Time Server**: Socket.IO with JWT handshake authentication
 - **Authentication**: JWT (JSON Web Tokens), bcryptjs password hashing
+- **Backup & Recovery**: Native `mongodump` & `mongorestore` automated pipeline
 - **File Uploads**: Multer with local disk storage / Cloudinary integration
-- **Security & Reliability**: Helmet, CORS, rate limiting, and graceful shutdown handlers
+- **Security**: Helmet, CORS, NoSQL sanitization, rate limiting, and graceful shutdown handlers
 
 ---
 
@@ -63,6 +74,7 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **MongoDB**: Local MongoDB instance running on `mongodb://localhost:27017` or a MongoDB Atlas URI
+- **MongoDB Database Tools**: `mongodump` & `mongorestore` (for database backup/restore)
 
 ### 1. Clone & Configure Environment
 
@@ -87,6 +99,7 @@ JWT_SECRET=your_super_secret_jwt_key_here
 JWT_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
 CLIENT_URL=http://localhost:5173
+AUTO_BACKUP_INTERVAL_HOURS=12
 
 # Optional: Cloudinary for cloud media storage (falls back to local /uploads if not set)
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
@@ -103,6 +116,7 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 | `MONGODB_URI` | Backend | **Yes** | `mongodb://localhost:27017/careerhub` | MongoDB connection URI |
 | `JWT_SECRET` | Backend | **Yes** | `replace-with-a-long-random-secret` | Secret key used to sign & verify JWT tokens |
 | `JWT_EXPIRES_IN` | Backend | No | `7d` | Token expiry duration (e.g. `7d`, `24h`) |
+| `AUTO_BACKUP_INTERVAL_HOURS` | Backend | No | `12` | Background auto-backup interval in hours |
 | `FRONTEND_URL` | Backend | No | `http://localhost:5173` | Frontend client origin allowed by CORS and Socket.IO |
 | `CLIENT_URL` | Backend | No | `http://localhost:5173` | Secondary client URL alias for CORS |
 | `CLOUDINARY_CLOUD_NAME` | Backend | No | `""` | Cloudinary cloud name for file uploads |
@@ -142,6 +156,25 @@ npm run dev
 
 ---
 
+## 💾 Database Backup & Disaster Recovery
+
+The project comes with built-in backup and disaster recovery tools:
+
+```bash
+# Take a manual database backup snapshot
+npm run --prefix backend db:backup
+
+# Restore database from the latest backup snapshot
+npm run --prefix backend db:restore
+
+# Restore from a specific backup snapshot
+node backend/scripts/restoreDb.js backend/backups/backup_2026-09-21T05-47-18-743Z
+```
+
+*Backups are saved to `backend/backups/` and automatically excluded from git commits.*
+
+---
+
 ## 👥 Demo Test Accounts
 
 | Role | Email | Password |
@@ -157,10 +190,11 @@ npm run dev
 ### Authentication
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Register candidate or recruiter | Public |
-| `POST` | `/api/auth/login` | Authenticate user & receive JWT token | Public |
+| `POST` | `/api/auth/register` | Register candidate or recruiter (rate limited) | Public |
+| `POST` | `/api/auth/login` | Authenticate user & receive JWT token (rate limited) | Public |
 | `POST` | `/api/auth/logout` | Clear authentication cookie | Public |
 | `GET` | `/api/auth/me` | Fetch authenticated user profile | Authenticated |
+| `POST` | `/api/auth/refresh` | Refresh user authentication session | Authenticated |
 
 ### Jobs Discovery & Management
 | Method | Endpoint | Description | Access |
@@ -200,7 +234,7 @@ npm run dev
 | `GET` | `/api/conversations/:id/messages` | Retrieve conversation message history & mark read | Authenticated |
 | `POST` | `/api/conversations/:id/messages` | Send a message with optional file attachments | Authenticated |
 | `PATCH` | `/api/conversations/:id/read` | Mark conversation messages as read | Authenticated |
-| `POST` | `/api/upload/attachment` | Upload document (PDF/DOC/DOCX) or image (JPG/PNG) <= 10MB | Authenticated |
+| `POST` | `/api/upload/attachment` | Upload document or image <= 10MB (rate limited) | Authenticated |
 
 ---
 
@@ -230,10 +264,11 @@ carrerHub/
 ├── backend/
 │   ├── config/              # App, Database, Env, and Multer upload configurations
 │   ├── controllers/         # Auth, Job, Application, Conversation, Dashboard, SavedJobs
-│   ├── middleware/          # JWT auth and Role-based authorization
+│   ├── middleware/          # JWT auth, Role authorization, NoSQL sanitization, Rate limiters
 │   ├── models/              # User, Job, Application, Conversation, Message, Notification
 │   ├── routes/              # Express API route declarations
-│   ├── services/            # Upload and email notification services
+│   ├── scripts/             # Backup (backupDb.js) and Restore (restoreDb.js) utilities
+│   ├── services/            # Upload service and automated Backup/Recovery service
 │   ├── sockets/             # Socket.IO lifecycle, presence, and chat events
 │   ├── uploads/             # Local attachments, avatars, and resumes storage
 │   └── index.js             # HTTP server entry point with graceful shutdown
