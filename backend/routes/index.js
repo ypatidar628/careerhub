@@ -27,7 +27,12 @@ import {
   getMessages,
   getNotifications,
 } from "../controllers/dashboardController.js";
-import { avatar, resume, update } from "../controllers/profileController.js";
+import {
+  avatar,
+  resume,
+  deleteResume,
+  update,
+} from "../controllers/profileController.js";
 import {
   createForApplication,
   getForApplication,
@@ -137,5 +142,6 @@ router.get("/dashboard", requireAuth, dashboard);
 router.patch("/profile", requireAuth, update);
 router.post("/profile/avatar", requireAuth, uploadRateLimiter, upload.single("avatar"), avatar);
 router.post("/profile/resume", requireAuth, uploadRateLimiter, upload.single("resume"), resume);
+router.delete("/profile/resume", requireAuth, deleteResume);
 
 export default router;

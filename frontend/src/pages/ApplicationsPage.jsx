@@ -4,21 +4,17 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   FiMessageCircle,
-  FiFileText,
-  FiDownload,
   FiClock,
   FiMapPin,
   FiBriefcase,
-  FiChevronRight,
   FiEye,
-  FiFilter,
-  FiSearch,
 } from "react-icons/fi";
 import client from "../api/client";
 import StatusBadge from "../components/applications/StatusBadge";
 import ApplicationDetailsModal from "../components/applications/ApplicationDetailsModal";
 import ChatModal from "../components/chat/ChatModal";
 import CustomSelect from "../components/common/CustomSelect";
+import ResumePreviewModal from "../components/common/ResumePreviewModal";
 
 export default function ApplicationsPage() {
   const user = useSelector((s) => s.auth.user);
@@ -36,6 +32,7 @@ export default function ApplicationsPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [chatApp, setChatApp] = useState(null);
+  const [previewResume, setPreviewResume] = useState(null);
 
   const recruiter = user?.role === "recruiter" || user?.role === "admin";
 
@@ -103,13 +100,6 @@ export default function ApplicationsPage() {
   const openDetailsForApp = (app) => {
     setSelectedApp(app);
     setDetailsModalOpen(true);
-  };
-
-  const getFullFileUrl = (url) => {
-    if (!url) return "#";
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    return `${backendUrl}${url}`;
   };
 
   const jobOptions = [
@@ -264,14 +254,18 @@ export default function ApplicationsPage() {
                       <>
                         {/* Resume preview */}
                         {item.resumeUrl && (
-                          <a
-                            href={getFullFileUrl(item.resumeUrl)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewResume({
+                                url: item.resumeUrl,
+                                name: item.resumeName || `${item.candidateName} - Resume.pdf`,
+                              })
+                            }
                             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                           >
-                            <FiFileText /> Resume
-                          </a>
+                            <FiEye /> Resume
+                          </button>
                         )}
 
                         {/* Status Change Dropdown */}
@@ -360,6 +354,16 @@ export default function ApplicationsPage() {
         isOpen={chatModalOpen}
         onClose={() => setChatModalOpen(false)}
       />
+
+      {/* Resume Preview Modal */}
+      {previewResume && (
+        <ResumePreviewModal
+          isOpen={Boolean(previewResume)}
+          onClose={() => setPreviewResume(null)}
+          resumeUrl={previewResume.url}
+          resumeName={previewResume.name}
+        />
+      )}
     </div>
   );
 }

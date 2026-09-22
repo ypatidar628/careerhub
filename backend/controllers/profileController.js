@@ -63,15 +63,37 @@ export const resume = async (req, res) => {
 
   try {
     const result = await uploadFile(req.file, "resumes");
-    await updateProfile(req.user.id, {
+    const user = await updateProfile(req.user.id, {
       resumeUrl: result.url,
       resumeName: req.file.originalname,
     });
-    return res.json({ url: result.url, name: req.file.originalname });
+    return res.json({
+      url: result.url,
+      name: req.file.originalname,
+      user: publicUser(user),
+    });
   } catch (error) {
     console.error("Resume upload error:", error);
     return res
       .status(500)
       .json({ message: "Resume upload failed. Please try again." });
+  }
+};
+
+export const deleteResume = async (req, res) => {
+  try {
+    const user = await updateProfile(req.user.id, {
+      resumeUrl: null,
+      resumeName: null,
+    });
+    return res.json({
+      message: "Resume removed successfully.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    console.error("Resume deletion error:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to remove resume. Please try again." });
   }
 };

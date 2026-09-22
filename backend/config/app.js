@@ -20,11 +20,12 @@ const clientOrigins = (process.env.CLIENT_URL || process.env.FRONTEND_URL || "ht
   .split(",")
   .map((o) => o.trim());
 
-// 1. Helmet Security Headers
+// 1. Helmet Security Headers (Configured for cross-origin document & media embedding)
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
+    frameguard: false,
   }),
 );
 
