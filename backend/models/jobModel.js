@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
-import { jobs as mockJobs } from "../data/mockData.js";
 
-const fallbackJobs = mockJobs.map((j, i) => ({
-  id: `j${i + 1}`,
-  _id: `j${i + 1}`,
-  ...j,
-  status: "Active",
-  postedAt: j.postedAt || "Recently",
-}));
+const fallbackJobs = [];
 
 const jobSchema = new mongoose.Schema(
   {
@@ -58,43 +51,6 @@ jobSchema.index({ location: 1, status: 1, category: 1, mode: 1 });
 jobSchema.index({ recruiterId: 1, createdAt: -1 });
 
 export const Job = mongoose.models.Job || mongoose.model("Job", jobSchema);
-
-export const seedDemoJobs = async () => {
-  if (mongoose.connection.readyState !== 1) return;
-
-  const count = await Job.countDocuments();
-  if (count >= 5) return;
-
-  const recruiter = await mongoose
-    .model("User")
-    .findOne({ role: "recruiter" })
-    .select("_id name")
-    .lean();
-
-  if (!recruiter) return;
-
-  for (const job of mockJobs) {
-    const exists = await Job.findOne({ title: job.title, company: job.company });
-    if (!exists) {
-      await Job.create({
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        category: job.category || "Engineering",
-        description: job.description,
-        mode: job.mode,
-        salary: job.salary,
-        experience: job.experience,
-        skills: job.skills || [],
-        requirements: job.requirements || [],
-        status: "Active",
-        recruiterId: recruiter._id,
-        recruiterName: recruiter.name,
-        postedAt: job.postedAt || "Just now",
-      });
-    }
-  }
-};
 
 export const listJobs = async (params = {}) => {
   const {

@@ -3,7 +3,7 @@ import { Job } from "../models/jobModel.js";
 import { Application } from "../models/applicationModel.js";
 import { SavedJob } from "../models/savedJobModel.js";
 import { getNotificationsForUser } from "../models/notificationModel.js";
-import { jobs as mockJobs, notifications as mockNotifs, messages as mockMessages } from "../data/mockData.js";
+import { notifications as mockNotifs, messages as mockMessages } from "../data/mockData.js";
 import mongoose from "mongoose";
 
 export const dashboard = async (req, res) => {
@@ -125,25 +125,19 @@ export const dashboard = async (req, res) => {
 
   // Fallback
   return res.json({
-    applications: 2,
-    interviews: 1,
-    savedJobs: 3,
+    applications: 0,
+    interviews: 0,
+    savedJobs: 0,
     profileStrength: 80,
     activity: [
-      { name: "Mon", value: 2 },
-      { name: "Tue", value: 4 },
-      { name: "Wed", value: 3 },
-      { name: "Thu", value: 6 },
-      { name: "Fri", value: 5 },
+      { name: "Mon", value: 0 },
+      { name: "Tue", value: 0 },
+      { name: "Wed", value: 0 },
+      { name: "Thu", value: 0 },
+      { name: "Fri", value: 0 },
     ],
-    recommended: mockJobs.slice(0, 3),
-    upcoming: [
-      {
-        company: "Lumin Tech",
-        role: "React Developer",
-        time: "Tomorrow, 11:00 AM",
-      },
-    ],
+    recommended: [],
+    upcoming: [],
   });
 };
 

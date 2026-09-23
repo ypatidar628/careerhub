@@ -6,7 +6,8 @@
     "dev": "node --watch index.js",
     "start": "node index.js",
     "db:backup": "node scripts/backupDb.js",
-    "db:restore": "node scripts/restoreDb.js"
+    "db:restore": "node scripts/restoreDb.js",
+    "db:clean-jobs": "node scripts/cleanJobs.js"
   },
   "dependencies": {
     "backend": "^0.0.0",

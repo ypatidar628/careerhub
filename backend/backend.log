@@ -1,4 +1,0 @@
-MongoDB state: connected
-MongoDB connected successfully.
-CareerHub API & Socket.IO listening on http://localhost:5000
-[0mGET /api/jobs [32m200[0m 21.219 ms - 8807[0m

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { seedDemoJobs } from "../models/jobModel.js";
 import { seedDemoUsers } from "../models/userModel.js";
 import {
   autoRecoverAndBackup,
@@ -52,7 +51,6 @@ export const connectDB = async () => {
   await autoRecoverAndBackup();
 
   await seedDemoUsers();
-  await seedDemoJobs();
 
   // Start background auto-backup routine (runs every 12 hours)
   startScheduledBackups(Number(process.env.AUTO_BACKUP_INTERVAL_HOURS) || 12);

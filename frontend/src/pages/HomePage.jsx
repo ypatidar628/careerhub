@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import {
@@ -8,15 +8,39 @@ import {
   FiZap,
   FiTrendingUp,
   FiUsers,
+  FiBriefcase,
 } from "react-icons/fi";
 import SectionHeading from "../components/common/SectionHeading";
 import JobCard from "../components/jobs/JobCard";
-import { jobs } from "../data/mockData";
+import client from "../api/client";
 import careerJourney from "../assets/career-journey-3d.png";
 
 export default function HomePage() {
   const hero = useRef();
   const nav = useNavigate();
+  const [featuredJobs, setFeaturedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    client
+      .get("/jobs", { params: { limit: 8 } })
+      .then(({ data }) => {
+        if (active) {
+          setFeaturedJobs(data.jobs || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load featured jobs:", err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -81,10 +105,10 @@ export default function HomePage() {
             </form>
             <div className="hero-reveal mt-7 flex flex-wrap gap-4 text-sm text-slate-300 sm:gap-7">
               <span>
-                <b className="text-white">12k+</b> open roles
+                <b className="text-white">Active</b> opportunities
               </span>
               <span>
-                <b className="text-white">2,400+</b> teams
+                <b className="text-white">Verified</b> hiring teams
               </span>
             </div>
           </div>
@@ -117,11 +141,36 @@ export default function HomePage() {
           title="Roles worth showing up for"
           text="Fresh, high-quality openings from teams that are building the future."
         />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-64 animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800"
+              />
+            ))}
+          </div>
+        ) : featuredJobs.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {featuredJobs.map((job) => (
+              <JobCard key={job.id || job._id} job={job} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800">
+            <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-brand/10 text-3xl text-brand dark:bg-brand/20">
+              <FiBriefcase />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+              No jobs posted yet
+            </h3>
+            <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+              Recruiters are preparing new openings. Sign in or post a job to get started.
+            </p>
+          </div>
+        )}
+
         <div className="mt-8">
           <Link
             to="/jobs"
