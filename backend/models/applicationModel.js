@@ -43,7 +43,11 @@ const applicationSchema = new mongoose.Schema(
       bio: String,
       skills: [String],
       experience: String,
+      education: String,
       avatarUrl: String,
+      portfolioUrl: String,
+      githubUrl: String,
+      linkedinUrl: String,
     },
     recruiterId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -54,11 +58,13 @@ const applicationSchema = new mongoose.Schema(
     resumeUrl: String,
     resumeName: String,
     coverLetter: String,
+    expectedSalary: String,
+    noticePeriod: String,
     answers: [{ questionId: String, question: String, answer: String }],
     status: { type: String, enum: stages, default: "Applied" },
     statusHistory: [statusHistorySchema],
     recruiterNotes: { type: String, default: "" },
-    score: { type: Number, default: 82 },
+    score: { type: Number, default: 85 },
   },
   { timestamps: true },
 );
@@ -77,6 +83,8 @@ export const createApplication = async ({
   coverLetter,
   resumeUrl,
   resumeName,
+  expectedSalary,
+  noticePeriod,
   answers = [],
 }) => {
   const initialHistory = [
@@ -99,24 +107,30 @@ export const createApplication = async ({
     candidateId: candidate.id || candidate._id,
     candidateName: candidate.name,
     candidateEmail: candidate.email,
-    candidatePhone: candidate.phone || "",
+    candidatePhone: candidate.phone || candidate.profile?.phone || "",
     candidateProfile: {
       location: candidate.profile?.location || "",
       bio: candidate.profile?.bio || "",
       skills: candidate.profile?.skills || candidate.skills || [],
       experience: candidate.profile?.experience || "",
+      education: candidate.profile?.education || "",
       avatarUrl: candidate.profile?.avatarUrl || candidate.profileImage || "",
+      portfolioUrl: candidate.profile?.portfolioUrl || "",
+      githubUrl: candidate.profile?.githubUrl || "",
+      linkedinUrl: candidate.profile?.linkedinUrl || "",
     },
     recruiterId: job.recruiterId,
     recruiterName: job.recruiterName || "",
     resumeUrl: resumeUrl || candidate.profile?.resumeUrl || null,
-    resumeName: resumeName || candidate.profile?.resumeName || "Resume",
-    coverLetter,
+    resumeName: resumeName || candidate.profile?.resumeName || "Resume.pdf",
+    coverLetter: coverLetter || "",
+    expectedSalary: expectedSalary || "",
+    noticePeriod: noticePeriod || "",
     answers,
     status: "Applied",
     statusHistory: initialHistory,
     recruiterNotes: "",
-    score: Math.floor(Math.random() * 15) + 80,
+    score: Math.floor(Math.random() * 15) + 85,
   };
 
   if (mongoose.connection.readyState === 1) {
@@ -138,7 +152,8 @@ export const createApplication = async ({
 export const applicationsForCandidate = async (candidateId) => {
   if (mongoose.connection.readyState === 1) {
     const applications = await Application.find({ candidateId })
-      .populate("jobId", "title company location mode salary category status")
+      .populate("jobId")
+      .populate("recruiterId", "name email phone profile company location")
       .sort({ createdAt: -1 })
       .lean();
     return applications.map((application) => ({
@@ -162,7 +177,8 @@ export const allApplicationsForRecruiter = async (recruiterId, filterParams = {}
     if (status && status !== "All") query.status = status;
 
     const applications = await Application.find(query)
-      .populate("jobId", "title company location mode status")
+      .populate("jobId")
+      .populate("candidateId", "name email phone profile skills profileImage")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -187,9 +203,15 @@ export const getApplicationById = async (id) => {
     const application = await Application.findById(id)
       .populate("jobId")
       .populate("candidateId", "name email phone profile skills profileImage")
-      .populate("recruiterId", "name email")
+      .populate("recruiterId", "name email phone profile company location")
       .lean();
-    return application ? { ...application, id: String(application._id) } : null;
+    return application
+      ? {
+          ...application,
+          id: String(application._id),
+          job: application.jobId ? { ...application.jobId, id: String(application.jobId._id) } : null,
+        }
+      : null;
   }
 
   return fallbackApplications.find((app) => String(app.id) === String(id) || String(app._id) === String(id)) || null;

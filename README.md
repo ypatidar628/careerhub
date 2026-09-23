@@ -1,6 +1,6 @@
 # CareerHub - Modern Job Discovery & Recruitment Platform
 
-CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching, a dedicated **real-time conversation history and chat system** powered by Socket.IO, **automated database backup & disaster recovery**, and **hardened enterprise-grade security**.
+CareerHub is a full-stack career and hiring platform connecting job seekers with recruiters in real time. It features responsive job discovery, multi-filter search, application lifecycle management, candidate bookmarking, dark/light theme switching, a dedicated **real-time conversation history and chat system** powered by Socket.IO, **automated database backup & disaster recovery**, **OTP verification & curved sliding authentication**, an **Argon-inspired modular profile system**, and **hardened enterprise-grade security**.
 
 ---
 
@@ -12,11 +12,32 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 - **Interactive Job Cards**: Quick view badges, mode chips, salary tags, application modal trigger, and recruiter insights.
 
 ### 2. Recruiter & Candidate Application Pipelines
-- **Pipeline Tracking**: Visual status timeline (`Applied` → `Under Review` → `Shortlisted` → `Interview` → `Selected` / `Rejected`).
-- **Recruiter Applicant Management**: Filter applicants by posted job, change candidate stages with optional status update notes, and inspect attached resumes with one click.
-- **Application Details Inspector**: Detailed modal with candidate profile, resume preview, match score, cover letter, and direct chat trigger.
+- **Dedicated Applied Job Viewer (`AppliedJobDetails.jsx`)**: Full job specifications, salary ranges, work mode, company overview, application snapshot, and authentic progress timeline for candidates.
+- **Recruiter Applicant Management (`ApplicantDetails.jsx`)**: Filter applicants by posted job, change candidate stages with optional status update notes, inspect attached resumes with one click, and calculate candidate match score.
+- **Application Details Page (`/applications/:id`)**: Full-page dedicated inspector with direct recruiter-candidate chat trigger and resume viewer.
 
-### 3. Real-Time Conversation History & Chat
+### 3. Argon-Inspired Modular Profile System
+- **2-Column Responsive Layout**:
+  - **Left Column (`ProfileSummary.jsx`)**: Circular avatar with change photo trigger, user identity, role badge, star rating (⭐ 4.8 / 18 reviews), platform statistics, location, department, candidate ID, and role-based quick actions.
+  - **Right Column (`ProfilePage.jsx`)**: Sectioned account information cards with inline `[Edit Profile]` $\leftrightarrow$ `[Save Changes]` & `[Cancel]` controls:
+    - **Personal Information**: Full Name, Email (read-only), Phone, Account Role (read-only), Department, Enrollment ID.
+    - **Contact Information**: Street Address, City, State, Country, Postal Code.
+    - **Skills Section**: Interactive skill chips with add/remove tag ability.
+    - **About Me**: Bio textarea with character counter.
+    - **Candidate Resume Box**: In-modal PDF/document preview (`ResumePreviewModal`), download, replace, and delete actions.
+
+### 4. Interactive Curved Sliding Auth & OTP Security
+- **Curved Sliding Card Experience (`AuthPage.jsx`)**:
+  - Distinct midnight purple card (`#232050`) with white curved dome arch (`rounded-t-[60px]`).
+  - Seamless toggle between Sign up and Login.
+  - Field labels with required asterisks (`*`) and silver-grey input backgrounds (`#e0e0e4`).
+  - Interactive password visibility toggles (`<FiEye />` / `<FiEyeOff />`).
+  - Light mode support with clean `bg-slate-300` background and dark mode `dark:bg-[#151438]`.
+- **OTP Verification Component (`OtpVerification.jsx`)**:
+  - 6-digit individual PIN input boxes with auto-focus progression, backspace navigation, and clipboard paste support.
+  - 60-second dynamic resend timer and integrated with **Forgot Password** and **Reset Password** flows.
+
+### 5. Real-Time Conversation History & Chat
 - **Two-Panel Conversation History (`/messages`)**:
   - **Left Panel**: Searchable conversation list by candidate name, recruiter name, job title, company, and message text, showing live online/offline presence (`🟢`/`⚪`), last message preview, timestamps, and animated unread badges.
   - **Right Panel (Chat Window)**: Sticky header with user presence and "View Application" button, application context card, date separators (`Today`, `Yesterday`), and smart auto-scroll with floating `↓ New messages` button.
@@ -29,15 +50,14 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 - **Interactive Features**:
   - Real-time animated typing indicator (`Rahul is typing...`).
   - Sticky composer with <kbd>Enter</kbd> (send), <kbd>Shift</kbd>+<kbd>Enter</kbd> (new line), inline emoji selector, and file uploader.
-  - Mobile responsive: seamless toggle between conversation list and full-width chat screen.
 
-### 4. Automated Database Backup & Disaster Recovery
+### 6. Automated Database Backup & Disaster Recovery
 - **Automatic Startup Recovery**: If the MongoDB database is empty or data was dropped/lost, the server automatically restores from the latest available backup snapshot upon startup.
 - **Automatic Boot & Scheduled Backups**: Automatically creates a fresh database snapshot whenever the server starts and runs scheduled background backups every 12 hours (configurable).
 - **Snapshot Rotation**: Automatically retains the 10 most recent snapshots and cleans up older ones to protect disk space.
 - **CLI Commands**: Single-command manual database backups and one-click restores (`npm run db:backup` and `npm run db:restore`).
 
-### 5. Enterprise-Grade Security Hardening
+### 7. Enterprise-Grade Security Hardening
 - **NoSQL Injection Defense**: Recursive query sanitization middleware stripping dangerous MongoDB operator keys (`$`, `.`) from request bodies, parameters, and query strings.
 - **Brute-Force & DoS Protection**: Dedicated strict rate limiters for authentication endpoints (`/auth/login`, `/auth/register`) and file upload routes.
 - **Privilege Escalation Protection**: Public registration strictly restricts roles to `"candidate"` or `"recruiter"` (rejects unauthorized `admin` role elevation).
@@ -56,7 +76,7 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 - **Styling**: Tailwind CSS, Material UI icons & tooltip, custom CSS variables
 - **Real-Time Client**: `socket.io-client`
 - **Forms & Validation**: React Hook Form, Zod
-- **Animations & Visuals**: GSAP, Recharts, React Hot Toast
+- **Animations & Visuals**: GSAP, Recharts, React Hot Toast, React Icons (`react-icons/fi`)
 
 ### Backend
 - **Runtime & Framework**: Node.js (ES Modules), Express
@@ -107,23 +127,6 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
 
-#### Environment Variables Reference
-
-| Variable | Scope | Required | Default / Example | Description |
-|---|---|---|---|---|
-| `NODE_ENV` | Backend | No | `development` | Application environment (`development` or `production`) |
-| `PORT` | Backend | No | `5000` | Port for Express REST API & Socket.IO server |
-| `MONGODB_URI` | Backend | **Yes** | `mongodb://localhost:27017/careerhub` | MongoDB connection URI |
-| `JWT_SECRET` | Backend | **Yes** | `replace-with-a-long-random-secret` | Secret key used to sign & verify JWT tokens |
-| `JWT_EXPIRES_IN` | Backend | No | `7d` | Token expiry duration (e.g. `7d`, `24h`) |
-| `AUTO_BACKUP_INTERVAL_HOURS` | Backend | No | `12` | Background auto-backup interval in hours |
-| `FRONTEND_URL` | Backend | No | `http://localhost:5173` | Frontend client origin allowed by CORS and Socket.IO |
-| `CLIENT_URL` | Backend | No | `http://localhost:5173` | Secondary client URL alias for CORS |
-| `CLOUDINARY_CLOUD_NAME` | Backend | No | `""` | Cloudinary cloud name for file uploads |
-| `CLOUDINARY_API_KEY` | Backend | No | `""` | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Backend | No | `""` | Cloudinary API secret key |
-| `VITE_API_URL` | Frontend | **Yes** | `http://localhost:5000` | Base backend API endpoint URL |
-
 #### Frontend `.env` Configuration
 ```env
 VITE_API_URL=http://localhost:5000
@@ -132,15 +135,20 @@ VITE_API_URL=http://localhost:5000
 ### 2. Install Dependencies
 
 ```bash
-# Install backend packages
+# Install root, backend, and frontend dependencies
+npm install
 npm install --prefix backend
-
-# Install frontend packages
 npm install --prefix frontend
 ```
 
 ### 3. Start Development Servers
 
+#### Option A: Run Both Concurrently from Root
+```bash
+npm run dev
+```
+
+#### Option B: Run in Separate Terminals
 ```bash
 # Terminal 1: Run Backend API & Socket.IO (Port 5000)
 cd backend
@@ -179,9 +187,9 @@ node backend/scripts/restoreDb.js backend/backups/backup_2026-09-21T05-47-18-743
 
 | Role | Email | Password |
 |---|---|---|
-| **Candidate** | `candidate@careerhub.dev` | `Password123!` |
-| **Recruiter** | `recruiter@careerhub.dev` | `Password123!` |
-| **Admin** | `admin@careerhub.dev` | `Password123!` |
+| **Candidate** | `candidate@careerhub.dev` | `password123` |
+| **Recruiter** | `recruiter@careerhub.dev` | `password123` |
+| **Admin** | `admin@careerhub.dev` | `password123` |
 
 ---
 
@@ -195,6 +203,14 @@ node backend/scripts/restoreDb.js backend/backups/backup_2026-09-21T05-47-18-743
 | `POST` | `/api/auth/logout` | Clear authentication cookie | Public |
 | `GET` | `/api/auth/me` | Fetch authenticated user profile | Authenticated |
 | `POST` | `/api/auth/refresh` | Refresh user authentication session | Authenticated |
+
+### User Profile
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `PATCH` | `/api/profile` | Update profile (bio, phone, address, skills, department, ID, etc.) | Authenticated |
+| `POST` | `/api/profile/avatar` | Upload user profile avatar photo (rate limited) | Authenticated |
+| `POST` | `/api/profile/resume` | Upload candidate resume document (rate limited) | Authenticated |
+| `DELETE` | `/api/profile/resume` | Remove candidate resume document | Authenticated |
 
 ### Jobs Discovery & Management
 | Method | Endpoint | Description | Access |
@@ -263,7 +279,7 @@ node backend/scripts/restoreDb.js backend/backups/backup_2026-09-21T05-47-18-743
 carrerHub/
 ├── backend/
 │   ├── config/              # App, Database, Env, and Multer upload configurations
-│   ├── controllers/         # Auth, Job, Application, Conversation, Dashboard, SavedJobs
+│   ├── controllers/         # Auth, Job, Application, Conversation, Dashboard, Profile, SavedJobs
 │   ├── middleware/          # JWT auth, Role authorization, NoSQL sanitization, Rate limiters
 │   ├── models/              # User, Job, Application, Conversation, Message, Notification
 │   ├── routes/              # Express API route declarations
@@ -278,19 +294,21 @@ carrerHub/
 │   │   ├── api/             # Axios client singleton with JWT interceptors
 │   │   ├── assets/          # Static illustrations and branding assets
 │   │   ├── components/
-│   │   │   ├── applications/# Timeline, StatusBadge, ApplicationDetailsModal
-│   │   │   ├── auth/        # ProtectedRoute, RoleRoute, LogoutButton
-│   │   │   ├── chat/        # ConversationHistory, ChatWindow, MessageBubble, ChatInput, TypingIndicator, FileUploader, chat.css
-│   │   │   ├── common/      # CustomSelect, StatCard, SectionHeading, LogoMark
+│   │   │   ├── applications/# AppliedJobDetails, ApplicantDetails, Timeline, StatusBadge, DetailsModal
+│   │   │   ├── auth/        # OtpVerification, ProtectedRoute, RoleRoute, LogoutButton
+│   │   │   ├── chat/        # ConversationHistory, ChatWindow, MessageBubble, ChatInput, TypingIndicator
+│   │   │   ├── common/      # ResumePreviewModal, CustomSelect, StatCard, SectionHeading, LogoMark
 │   │   │   ├── dashboard/   # DashboardShell layout
 │   │   │   ├── jobs/        # JobCard, JobFilters, SavedJobs
-│   │   │   └── layout/      # SiteHeader, SiteFooter
+│   │   │   ├── layout/      # SiteHeader, SiteFooter
+│   │   │   └── profile/     # ProfileSummary, ProfileStats, ProfileImage, PersonalInformation, ContactInformation, SkillsSection, AboutSection
 │   │   ├── context/         # AppContext (Dark theme), SocketContext (Real-time events)
-│   │   ├── pages/           # HomePage, JobsPage, JobDetailsPage, ApplicationsPage, MessagesPage, ProfilePage, PostJobPage, SettingsPage, AuthPage
+│   │   ├── pages/           # HomePage, JobsPage, JobDetailsPage, ApplicationsPage, ApplicationDetailsPage, MessagesPage, ProfilePage, PostJobPage, SettingsPage, AuthPage, ForgotPasswordPage, ResetPasswordPage
 │   │   ├── socket/          # Socket.IO client manager
 │   │   ├── store/           # Redux Toolkit store and slices
 │   │   └── index.css        # Tailwind directives and custom utility classes
 │   └── package.json
+├── package.json
 └── README.md
 ```
 
@@ -298,16 +316,23 @@ carrerHub/
 
 ## 🧪 Build & Production Deployment
 
+### Build Frontend
 ```bash
-# Build Frontend Bundle
-cd frontend
+# Build Frontend Bundle from root
 npm run build
 
-# Preview Production Build
+# Or directly in frontend folder
+cd frontend
+npm run build
+```
+
+### Preview Frontend Build
+```bash
+cd frontend
 npm run preview
 ```
 
-To run the backend in production:
+### Run Backend in Production
 ```bash
 cd backend
 NODE_ENV=production node index.js

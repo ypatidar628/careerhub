@@ -34,9 +34,22 @@ const userSchema = new mongoose.Schema(
       bio: String,
       skills: [String],
       experience: String,
+      education: String,
+      department: String,
+      enrollmentNumber: String,
+      address: String,
+      city: String,
+      state: String,
+      country: String,
+      postalCode: String,
       avatarUrl: String,
       resumeUrl: String,
       resumeName: String,
+      portfolioUrl: String,
+      githubUrl: String,
+      linkedinUrl: String,
+      rating: { type: Number, default: 4.8 },
+      reviewsCount: { type: Number, default: 12 },
     },
   },
   { timestamps: true },
@@ -80,6 +93,15 @@ const seedFallbackUsers = async () => {
         bio: "Product-minded designer building useful experiences.",
         skills: ["Figma", "UX Research", "Prototyping"],
         experience: "5",
+        department: "Computer Science",
+        enrollmentNumber: "CH-2026-8841",
+        education: "B.Tech Computer Science",
+        city: "Bengaluru",
+        state: "Karnataka",
+        country: "India",
+        postalCode: "560001",
+        rating: 4.9,
+        reviewsCount: 18,
       },
     },
     {
@@ -93,6 +115,15 @@ const seedFallbackUsers = async () => {
         bio: "Connecting great people with great work.",
         skills: ["Hiring", "Sourcing"],
         experience: "6",
+        department: "Human Resources & Talent",
+        enrollmentNumber: "REC-2026-102",
+        education: "MBA Human Resources",
+        city: "Mumbai",
+        state: "Maharashtra",
+        country: "India",
+        postalCode: "400001",
+        rating: 4.8,
+        reviewsCount: 24,
       },
     },
     {
@@ -125,6 +156,15 @@ export const seedDemoUsers = async () => {
           bio: "Product-minded designer building useful experiences.",
           skills: ["Figma", "UX Research", "Prototyping"],
           experience: "5",
+          department: "Computer Science",
+          enrollmentNumber: "CH-2026-8841",
+          education: "B.Tech Computer Science",
+          city: "Bengaluru",
+          state: "Karnataka",
+          country: "India",
+          postalCode: "560001",
+          rating: 4.9,
+          reviewsCount: 18,
         },
       },
       {
@@ -137,6 +177,15 @@ export const seedDemoUsers = async () => {
           bio: "Connecting great people with great work.",
           skills: ["Hiring", "Sourcing"],
           experience: "6",
+          department: "Human Resources & Talent",
+          enrollmentNumber: "REC-2026-102",
+          education: "MBA Human Resources",
+          city: "Mumbai",
+          state: "Maharashtra",
+          country: "India",
+          postalCode: "400001",
+          rating: 4.8,
+          reviewsCount: 24,
         },
       },
       {
@@ -198,7 +247,10 @@ export const createUser = async ({
     email: String(email).toLowerCase(),
     password,
     role,
-    profile: {},
+    profile: {
+      rating: 4.8,
+      reviewsCount: 1,
+    },
   };
 
   if (mongoose.connection.readyState === 1) {
@@ -227,17 +279,34 @@ export const allUsers = async () => {
 
 export const updateProfile = async (id, data) => {
   if (mongoose.connection.readyState === 1) {
-    const user = await User.findByIdAndUpdate(
-      id,
-      { $set: { profile: { ...(await User.findById(id))?.profile, ...data } } },
-      { new: true },
-    ).lean();
-    return user ? publicUser(user) : null;
+    const existing = await User.findById(id);
+    if (!existing) return null;
+
+    // If top-level fields like name, phone, or skills are present
+    if (data.name && typeof data.name === "string" && data.name.trim()) {
+      existing.name = data.name.trim();
+    }
+    if (data.phone !== undefined) {
+      existing.phone = data.phone;
+    }
+    if (data.skills !== undefined && Array.isArray(data.skills)) {
+      existing.skills = data.skills;
+    }
+
+    const currentProfile = existing.profile ? existing.profile.toObject() : {};
+    const updatedProfile = { ...currentProfile, ...data };
+
+    existing.profile = updatedProfile;
+    await existing.save();
+    return publicUser(existing);
   }
 
   await seedFallbackUsers();
   const user = fallbackUsers.find((entry) => entry.id === id);
   if (!user) return null;
-  user.profile = { ...user.profile, ...data };
+  if (data.name) user.name = data.name;
+  if (data.phone !== undefined) user.phone = data.phone;
+  if (data.skills !== undefined) user.skills = data.skills;
+  user.profile = { ...(user.profile || {}), ...data };
   return publicUser(user);
 };

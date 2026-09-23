@@ -41,6 +41,8 @@ export const apply = async (req, res) => {
     coverLetter: req.body.coverLetter || "",
     resumeUrl: req.body.resumeUrl,
     resumeName: req.body.resumeName,
+    expectedSalary: req.body.expectedSalary || "",
+    noticePeriod: req.body.noticePeriod || "",
     answers: req.body.answers,
   });
 

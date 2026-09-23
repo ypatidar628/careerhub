@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   FiMessageCircle,
@@ -8,15 +8,20 @@ import {
   FiMapPin,
   FiBriefcase,
   FiEye,
+  FiExternalLink,
+  FiFileText,
+  FiUser,
 } from "react-icons/fi";
 import client from "../api/client";
 import StatusBadge from "../components/applications/StatusBadge";
-import ApplicationDetailsModal from "../components/applications/ApplicationDetailsModal";
+import AppliedJobDetails from "../components/applications/AppliedJobDetails";
+import ApplicantDetails from "../components/applications/ApplicantDetails";
 import ChatModal from "../components/chat/ChatModal";
 import CustomSelect from "../components/common/CustomSelect";
 import ResumePreviewModal from "../components/common/ResumePreviewModal";
 
 export default function ApplicationsPage() {
+  const navigate = useNavigate();
   const user = useSelector((s) => s.auth.user);
   const [items, setItems] = useState([]);
   const [stages, setStages] = useState([]);
@@ -70,10 +75,13 @@ export default function ApplicationsPage() {
     }
   }, [recruiter]);
 
-  const updateStage = async (id, status) => {
+  const updateStage = async (id, status, note = "") => {
     try {
-      await client.patch(`/applications/${id}`, { status });
-      toast.success(`Applicant moved to ${status}`);
+      const { data } = await client.patch(`/applications/${id}`, { status, note });
+      toast.success(`Application updated to ${status}`);
+      if (selectedApp && (selectedApp.id === id || selectedApp._id === id)) {
+        setSelectedApp(data.application);
+      }
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || "Unable to update stage.");
@@ -83,7 +91,7 @@ export default function ApplicationsPage() {
   const withdrawApplication = async (id) => {
     if (!window.confirm("Are you sure you want to withdraw this application?")) return;
     try {
-      await client.patch(`/applications/${id}/withdraw`);
+      const { data } = await client.patch(`/applications/${id}/withdraw`);
       toast.success("Application withdrawn.");
       setDetailsModalOpen(false);
       load();
@@ -124,12 +132,12 @@ export default function ApplicationsPage() {
             {recruiter ? "RECRUITER PIPELINE" : "CANDIDATE APPLICATIONS"}
           </span>
           <h1 className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl dark:text-white">
-            {recruiter ? "Applicant Pipeline Management" : "My Submitted Applications"}
+            {recruiter ? "Applicant Pipeline Management" : "My Applications"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
             {recruiter
               ? "Review applicant profiles, change pipeline stages, inspect resumes, and message candidates in real time."
-              : "Track your active job applications, timeline updates, and direct recruiter conversations."}
+              : "Track your active job applications, complete job details, timeline updates, and recruiter conversations."}
           </p>
         </div>
       </div>
@@ -196,9 +204,12 @@ export default function ApplicationsPage() {
                 className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-xs transition duration-200 hover:border-brand/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-800 sm:p-6"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className="min-w-0 flex-1 cursor-pointer"
+                    onClick={() => openDetailsForApp(item)}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                      <h2 className="text-lg font-bold text-slate-900 group-hover:text-brand transition dark:text-white">
                         {recruiter ? item.candidateName : item.jobTitle}
                       </h2>
                       <StatusBadge status={item.status} />
@@ -252,6 +263,15 @@ export default function ApplicationsPage() {
                   <div className="flex flex-wrap items-center gap-2.5">
                     {recruiter ? (
                       <>
+                        {/* View Candidate Details */}
+                        <button
+                          type="button"
+                          onClick={() => openDetailsForApp(item)}
+                          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs transition hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        >
+                          <FiEye /> View Details
+                        </button>
+
                         {/* Resume preview */}
                         {item.resumeUrl && (
                           <button
@@ -264,7 +284,7 @@ export default function ApplicationsPage() {
                             }
                             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                           >
-                            <FiEye /> Resume
+                            <FiFileText /> Resume
                           </button>
                         )}
 
@@ -289,12 +309,13 @@ export default function ApplicationsPage() {
                       </>
                     ) : (
                       <>
+                        {/* Candidate View Job Details */}
                         <button
                           type="button"
                           onClick={() => openDetailsForApp(item)}
-                          className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
-                          <FiEye /> View Details
+                          <FiEye /> View Job Details
                         </button>
 
                         <button
@@ -338,15 +359,26 @@ export default function ApplicationsPage() {
         </div>
       )}
 
-      {/* Application Details Modal */}
-      <ApplicationDetailsModal
-        application={selectedApp}
-        isOpen={detailsModalOpen}
-        onClose={() => setDetailsModalOpen(false)}
-        onOpenChat={openChatForApp}
-        onWithdraw={withdrawApplication}
-        isRecruiter={recruiter}
-      />
+      {/* Candidate Details Modal -> AppliedJobDetails */}
+      {!recruiter && selectedApp && detailsModalOpen && (
+        <AppliedJobDetails
+          application={selectedApp}
+          onClose={() => setDetailsModalOpen(false)}
+          onOpenChat={openChatForApp}
+          onWithdraw={withdrawApplication}
+        />
+      )}
+
+      {/* Recruiter Details Modal -> ApplicantDetails */}
+      {recruiter && selectedApp && detailsModalOpen && (
+        <ApplicantDetails
+          application={selectedApp}
+          onClose={() => setDetailsModalOpen(false)}
+          onOpenChat={openChatForApp}
+          onUpdateStage={updateStage}
+          stages={stages}
+        />
+      )}
 
       {/* Chat Modal */}
       <ChatModal

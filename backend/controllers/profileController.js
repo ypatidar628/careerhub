@@ -1,5 +1,9 @@
-import { updateProfile, publicUser } from "../models/userModel.js";
+import { updateProfile, publicUser, findById } from "../models/userModel.js";
 import { uploadFile } from "../services/uploadService.js";
+import { Application } from "../models/applicationModel.js";
+import { Job } from "../models/jobModel.js";
+import { SavedJob } from "../models/savedJobModel.js";
+import mongoose from "mongoose";
 
 const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const resumeTypes = [
@@ -9,11 +13,31 @@ const resumeTypes = [
 ];
 
 export const update = async (req, res) => {
-  const allowed = ["phone", "location", "bio", "experience", "skills"];
-  const profile = Object.fromEntries(
+  const allowed = [
+    "name",
+    "phone",
+    "location",
+    "bio",
+    "experience",
+    "skills",
+    "department",
+    "enrollmentNumber",
+    "education",
+    "address",
+    "city",
+    "state",
+    "country",
+    "postalCode",
+    "portfolioUrl",
+    "githubUrl",
+    "linkedinUrl",
+  ];
+
+  const profileData = Object.fromEntries(
     Object.entries(req.body).filter(([key]) => allowed.includes(key)),
   );
-  const user = await updateProfile(req.user.id, profile);
+
+  const user = await updateProfile(req.user.id, profileData);
 
   if (!user) {
     return res.status(404).json({ message: "User profile not found." });

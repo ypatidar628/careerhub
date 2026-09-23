@@ -1,199 +1,352 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import gsap from "gsap";
-import { Button, Chip } from "@mui/material";
-import { FiArrowRight, FiLock, FiMail, FiUser } from "react-icons/fi";
+import { useNavigate, Link } from "react-router-dom";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import client from "../api/client";
 import { setSession } from "../store/authSlice";
 
-const schema = z.object({
-  name: z.string().min(2, "Enter your name").optional(),
+const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Use at least 8 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Enter your name"),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["candidate", "recruiter", "admin"]),
 });
 
 export default function AuthPage() {
-  const [registering, setRegistering] = useState(false);
-  const card = useRef();
+  // isLogin: true means "Login" mode (white curved dome up), false means "Sign up" mode
+  const [isLogin, setIsLogin] = useState(true);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Login form hook
   const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
+    register: registerLogin,
+    handleSubmit: handleLoginSubmit,
+    formState: { errors: loginErrors, isSubmitting: isLoginSubmitting },
+    reset: resetLogin,
   } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(loginSchema),
+  });
+
+  // Register form hook
+  const {
+    register: registerSignup,
+    handleSubmit: handleSignupSubmit,
+    formState: { errors: signupErrors, isSubmitting: isSignupSubmitting },
+    reset: resetSignup,
+  } = useForm({
+    resolver: zodResolver(registerSchema),
     defaultValues: { role: "candidate" },
   });
-  const dispatch = useDispatch();
-  const nav = useNavigate();
 
-  useLayoutEffect(() => {
-    gsap.fromTo(
-      card.current,
-      { opacity: 0, y: 28, rotateY: -16 },
-      { opacity: 1, y: 0, rotateY: 0, duration: 0.8, ease: "power3.out" },
-    );
-  }, []);
-
-  const flipTo = (next) => {
-    if (next === registering) return;
-    gsap
-      .timeline()
-      .to(card.current, {
-        rotateY: 180,
-        scale: 0.96,
-        duration: 0.38,
-        ease: "power2.in",
-      })
-      .call(() => setRegistering(next))
-      .to(card.current, {
-        rotateY: 360,
-        scale: 1,
-        duration: 0.42,
-        ease: "back.out(1.4)",
-      });
-  };
-
-  const submit = async (values) => {
+  const onLogin = async (values) => {
     try {
-      const { data } = await client.post(
-        `/auth/${registering ? "register" : "login"}`,
-        values,
-      );
+      const { data } = await client.post("/auth/login", values);
       dispatch(setSession(data));
-      toast.success(registering ? "Welcome to CareerHub!" : "Welcome back!");
-      nav("/dashboard");
+      toast.success("Welcome back to CareerHub!");
+      navigate("/dashboard");
     } catch (e) {
-      toast.error(e.response?.data?.message || "Unable to continue.");
+      toast.error(e.response?.data?.message || "Invalid credentials. Please try again.");
     }
   };
 
-  const Field = ({ name, label, type = "text", icon }) => (
-    <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
-      {label}
-      <span className="relative mt-1 block">
-        {icon}
-        <input
-          type={type}
-          className="w-full rounded-xl border border-slate-300 bg-transparent py-3 pl-10 pr-3 text-slate-900 outline-brand dark:border-slate-600 dark:text-white"
-          {...register(name)}
-        />
-      </span>
-      {errors[name] && (
-        <span className="text-xs text-rose-500">{errors[name].message}</span>
-      )}
-    </label>
-  );
+  const onSignup = async (values) => {
+    try {
+      const { data } = await client.post("/auth/register", values);
+      dispatch(setSession(data));
+      toast.success("Welcome to CareerHub! Account created.");
+      navigate("/dashboard");
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Registration failed. Please try again.");
+    }
+  };
 
   return (
-    <main className="auth-stage grid min-h-[calc(100vh-64px)] place-items-center overflow-hidden bg-[radial-gradient(circle_at_20%_20%,#ddd6fe,transparent_25%),radial-gradient(circle_at_80%_70%,#a5f3fc,transparent_25%)] p-5 dark:bg-slate-950">
-      <form
-        ref={card}
-        onSubmit={handleSubmit(submit)}
-        className="auth-card w-full max-w-md rounded-[2rem] border border-white/70 bg-white/85 p-7 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-800/90"
-      >
-        <div className="mb-6 flex rounded-xl bg-slate-100 p-1 dark:bg-slate-700">
+    <div className="flex min-h-[calc(100vh-70px)] items-center justify-center bg-slate-300 p-4 font-sans text-slate-900 transition-colors duration-200 dark:bg-[#151438] dark:text-slate-100 sm:p-8">
+      {/* Outer Card Container */}
+      <div className="relative mx-auto w-full max-w-[470px] h-[670px] overflow-hidden rounded-[36px] bg-[#232050] shadow-[0_20px_50px_rgba(35,32,80,0.22)] border border-[#38346e]/40 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] transition-all duration-500 flex flex-col justify-between">
+        
+        {/* ======================================================== */}
+        {/* ONLY ONE SINGLE "SIGN UP" HEADER AT THE TOP */}
+        {/* ======================================================== */}
+        <div className="pt-6 pb-2 text-center z-10">
           <button
             type="button"
-            onClick={() => flipTo(false)}
-            className={`flex-1 rounded-lg py-2 font-semibold transition ${!registering ? "bg-white shadow dark:bg-slate-600 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => flipTo(true)}
-            className={`flex-1 rounded-lg py-2 font-semibold transition ${registering ? "bg-white shadow dark:bg-slate-600 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}
-          >
-            Register
-          </button>
-        </div>
-        <Chip
-          label={registering ? "YOUR NEXT CHAPTER" : "WELCOME BACK"}
-          size="small"
-          color="primary"
-          variant="outlined"
-        />
-        <h1 className="mt-4 text-3xl font-bold dark:text-white">
-          {registering ? "Make your next move." : "Good to see you."}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {registering
-            ? "Build a profile that opens doors."
-            : "Your opportunities are waiting."}
-        </p>
-        <div className="mt-5 space-y-4">
-          {registering && (
-            <Field
-              name="name"
-              label="Full name"
-              icon={
-                <FiUser className="absolute left-3 top-3.5 text-slate-400" />
+            onClick={() => {
+              if (isLogin) {
+                setIsLogin(false);
+                resetSignup();
               }
-            />
-          )}
-          <Field
-            name="email"
-            label="Email address"
-            type="email"
-            icon={<FiMail className="absolute left-3 top-3.5 text-slate-400" />}
-          />
-          <Field
-            name="password"
-            label="Password"
-            type="password"
-            icon={<FiLock className="absolute left-3 top-3.5 text-slate-400" />}
-          />
-          {registering && (
-            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
-              I’m joining as
-              <select
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-800 outline-brand dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                {...register("role")}
-              >
-                <option value="candidate" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Candidate</option>
-                <option value="recruiter" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Recruiter</option>
-                <option value="admin" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Admin</option>
-              </select>
-            </label>
-          )}
-          {!registering && (
-            <a
-              className="text-sm text-brand hover:underline"
-              href="/forgot-password"
-            >
-              Forgot password?
-            </a>
-          )}
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            endIcon={<FiArrowRight />}
-            variant="contained"
-            fullWidth
-            sx={{
-              py: 1.35,
-              borderRadius: 2,
-              textTransform: "none",
-              fontWeight: 700,
             }}
+            className={`font-bold tracking-tight text-white transition-all duration-300 ${
+              isLogin
+                ? "text-sm sm:text-base opacity-90 hover:opacity-100 hover:scale-105 cursor-pointer"
+                : "text-2xl sm:text-3xl cursor-default"
+            }`}
           >
-            {isSubmitting
-              ? "Please wait…"
-              : registering
-                ? "Create account"
-                : "Sign in"}
-          </Button>
+            Sign up
+          </button>
         </div>
-        <p className="mt-5 font-mono-display text-[10px] text-slate-500 dark:text-slate-400">
-          DEV DEMO · candidate@careerhub.dev / password123
-        </p>
-      </form>
-    </main>
+
+        {/* ======================================================== */}
+        {/* SIGN UP FORM BODY (Completely hidden in Login mode) */}
+        {/* ======================================================== */}
+        <div
+          className={`flex-1 px-7 pt-6 overflow-y-auto transition-all duration-500 ease-in-out ${
+            isLogin
+              ? "hidden opacity-0 pointer-events-none"
+              : "block opacity-100"
+          }`}
+        >
+          <form
+            onSubmit={handleSignupSubmit(onSignup)}
+            className="space-y-6 pt-1"
+          >
+            {/* User name */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                User name <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. johndoe"
+                {...registerSignup("name")}
+                className="w-full rounded-md border-0 bg-[#e0e0e4] px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+              />
+              {signupErrors.name && (
+                <p className="mt-1 text-[11px] text-rose-400 font-medium">
+                  {signupErrors.name.message}
+                </p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                Email Address <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="email"
+                placeholder="e.g. john@example.com"
+                {...registerSignup("email")}
+                className="w-full rounded-md border-0 bg-[#e0e0e4] px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+              />
+              {signupErrors.email && (
+                <p className="mt-1 text-[11px] text-rose-400 font-medium">
+                  {signupErrors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Phone No. */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                Phone No.
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. +91 98765 43210"
+                {...registerSignup("phone")}
+                className="w-full rounded-md border-0 bg-[#e0e0e4] px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+              />
+            </div>
+
+            {/* Password with Eye Toggle */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                Password <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showSignupPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  {...registerSignup("password")}
+                  className="w-full rounded-md border-0 bg-[#e0e0e4] pl-3.5 pr-10 py-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#50357f] transition p-1 cursor-pointer"
+                  aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                >
+                  {showSignupPassword ? (
+                    <FiEyeOff className="text-base" />
+                  ) : (
+                    <FiEye className="text-base" />
+                  )}
+                </button>
+              </div>
+              {signupErrors.password && (
+                <p className="mt-1 text-[11px] text-rose-400 font-medium">
+                  {signupErrors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Role selector */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                Account Role
+              </label>
+              <select
+                {...registerSignup("role")}
+                className="w-full rounded-md border-0 bg-[#e0e0e4] px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+              >
+                <option value="candidate">Candidate (Job Seeker)</option>
+                <option value="recruiter">Recruiter (Employer)</option>
+                <option value="admin">Platform Admin</option>
+              </select>
+            </div>
+
+            {/* Sign up button */}
+            <div className="pt-2 pb-2">
+              <button
+                type="submit"
+                disabled={isSignupSubmitting}
+                className="w-full rounded-md bg-[#50357f] py-2.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-[#604099] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              >
+                {isSignupSubmitting ? "Signing up..." : "Sign up"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* ======================================================== */}
+        {/* WHITE CURVED DOME FOR LOGIN */}
+        {/* ======================================================== */}
+        <div
+          className={`bg-[#ececf0] text-slate-900 transition-all duration-500 ease-in-out z-20 flex flex-col items-center shadow-[0_-10px_30px_rgba(0,0,0,0.25)] ${
+            isLogin
+              ? "h-[85%] rounded-t-[60px] p-7 pt-6"
+              : "h-[60px] rounded-t-[50px] p-3 justify-center cursor-pointer hover:bg-white"
+          }`}
+          onClick={() => {
+            if (!isLogin) {
+              setIsLogin(true);
+              resetLogin();
+            }
+          }}
+        >
+          {!isLogin ? (
+            /* Bottom tab button when Signup is active */
+            <button
+              type="button"
+              className="text-base sm:text-lg font-bold text-[#50357f] tracking-wide cursor-pointer transition hover:scale-105"
+            >
+              Login
+            </button>
+          ) : (
+            /* Expanded Login Form when Login is active */
+            <div className="w-full flex-1 flex flex-col justify-between animate-in fade-in duration-300">
+              <div>
+                {/* Login Title */}
+                <div className="text-center pt-2 pb-5">
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#50357f]">
+                    Login
+                  </h2>
+                </div>
+
+                {/* Login Form */}
+                <form
+                  onSubmit={handleLoginSubmit(onLogin)}
+                  className="space-y-3.5"
+                >
+                  {/* Email */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. candidate@careerhub.dev"
+                      {...registerLogin("email")}
+                      className="w-full rounded-md border-0 bg-[#dedee2] px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+                    />
+                    {loginErrors.email && (
+                      <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                        {loginErrors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password with Eye Toggle */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Password <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        {...registerLogin("password")}
+                        className="w-full rounded-md border-0 bg-[#dedee2] pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#50357f] transition p-1 cursor-pointer"
+                        aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                      >
+                        {showLoginPassword ? (
+                          <FiEyeOff className="text-base" />
+                        ) : (
+                          <FiEye className="text-base" />
+                        )}
+                      </button>
+                    </div>
+                    {loginErrors.password && (
+                      <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                        {loginErrors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <div className="flex justify-end pt-0.5">
+                    <Link
+                      to="/forgot-password"
+                      className="text-[11px] font-semibold text-[#50357f] hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+
+                  {/* Login Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoginSubmitting}
+                      className="w-full rounded-md bg-[#50357f] py-2.5 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-[#604099] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                    >
+                      {isLoginSubmitting ? "Logging in..." : "Login"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Demo Credentials hint */}
+              <div className="pt-3 text-center">
+                <p className="font-mono text-[10px] text-slate-500">
+                  Demo: candidate@careerhub.dev / password123
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

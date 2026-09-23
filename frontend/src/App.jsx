@@ -7,6 +7,7 @@ import JobsPage from "./pages/JobsPage";
 import JobDetailsPage from "./pages/JobDetailsPage";
 import DashboardPage from "./pages/DashboardPage";
 import ApplicationsPage from "./pages/ApplicationsPage";
+import ApplicationDetailsPage from "./pages/ApplicationDetailsPage";
 import MessagesPage from "./pages/MessagesPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
@@ -44,6 +45,7 @@ export default function App() {
           <Route element={<DashboardShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/applications" element={<ApplicationsPage />} />
+            <Route path="/applications/:id" element={<ApplicationDetailsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route element={<RoleRoute roles={["recruiter"]} />}>
               <Route path="/post-job" element={<PostJobPage />} />
