@@ -11,8 +11,6 @@ import {
   FiDownload,
   FiTrash2,
   FiCheckCircle,
-  FiAlertCircle,
-  FiBookmark,
 } from "react-icons/fi";
 import client from "../api/client";
 import { updateUser } from "../store/authSlice";
@@ -36,12 +34,10 @@ export default function ProfilePage() {
   const user = useSelector((state) => state.auth.user);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(""); // "avatar" | "resume"
   const [deletingResume, setDeletingResume] = useState(false);
   const [errors, setErrors] = useState({});
-  const [activeView, setActiveView] = useState("profile"); // "profile" | "saved"
 
   // Platform statistics
   const [stats, setStats] = useState(null);
@@ -286,8 +282,8 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-7xl pb-12">
-      {/* 2-Column Responsive Layout: Left: Profile Summary, Right: Account Information */}
-      <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
+      {/* 2-Column Responsive Layout: Standardized Gutter to gap-6 */}
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* LEFT COLUMN: Profile Summary Card */}
         <aside className="space-y-6">
           <ProfileSummary
@@ -305,7 +301,7 @@ export default function ProfilePage() {
             {/* Account Card Header with Edit/Save Actions */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5 dark:border-slate-800">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand">
+                <span className="text-xs font-semibold text-brand">
                   CareerHub Account
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
@@ -322,7 +318,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center gap-1.5 rounded-2xl bg-brand px-4 py-2.5 text-xs font-bold text-white shadow-2xs transition hover:bg-brand/90 active:scale-95"
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-brand/90 active:scale-95 cursor-pointer"
                   >
                     <FiEdit2 className="text-sm" />
                     <span>Edit Profile</span>
@@ -333,7 +329,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleCancelEdit}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
                     >
                       <FiX className="text-sm" />
                       <span>Cancel</span>
@@ -343,7 +339,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleSaveProfile}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-2xs transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                       <FiCheck className="text-sm" />
                       <span>{saving ? "Saving..." : "Save Changes"}</span>
@@ -393,14 +389,14 @@ export default function ProfilePage() {
                     type="button"
                     onClick={handleCancelEdit}
                     disabled={saving}
-                    className="rounded-2xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="rounded-2xl bg-brand px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-brand/90 disabled:opacity-50"
+                    className="rounded-xl bg-brand px-6 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand/90 disabled:opacity-50"
                   >
                     {saving ? "Saving Changes..." : "Save Changes"}
                   </button>
@@ -412,12 +408,12 @@ export default function ProfilePage() {
           {/* Candidate Resume Section (Only for Candidate role) */}
           {isCandidate && (
             <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition dark:border-slate-800 dark:bg-slate-900 sm:p-8">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
                     Candidate Resume
-                  </h3>
-                  <p className="text-xs text-slate-400">
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-400">
                     Attached automatically when applying for new positions.
                   </p>
                 </div>
@@ -493,18 +489,18 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-800">
-                    <div className="mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-brand/10 text-xl text-brand dark:bg-brand/20">
+                  <div className="flex flex-col items-start justify-start rounded-2xl border border-dashed border-slate-300 p-8 text-left dark:border-slate-800">
+                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-brand/10 text-xl text-brand dark:bg-brand/20">
                       <FiFileText />
                     </div>
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       No resume uploaded yet
                     </p>
-                    <p className="mt-1 max-w-sm text-[11px] text-slate-400">
+                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
                       Upload your latest resume (PDF, DOC, DOCX) to apply to active jobs instantly.
                     </p>
 
-                    <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand/90">
+                    <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand/90">
                       <FiUpload />
                       <span>{uploading === "resume" ? "Uploading..." : "Upload Resume"}</span>
                       <input
@@ -524,12 +520,12 @@ export default function ProfilePage() {
           {/* Saved Jobs Section (Candidate only) */}
           {isCandidate && (
             <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition dark:border-slate-800 dark:bg-slate-900 sm:p-8">
-              <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
                     Saved Opportunities
-                  </h3>
-                  <p className="text-xs text-slate-400">
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-400">
                     Jobs bookmarked for later review and application.
                   </p>
                 </div>

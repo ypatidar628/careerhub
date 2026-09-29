@@ -85,6 +85,7 @@ CareerHub is a full-stack career and hiring platform connecting job seekers with
 - **Authentication**: JWT (JSON Web Tokens), bcryptjs password hashing
 - **Backup & Recovery**: Native `mongodump` & `mongorestore` automated pipeline
 - **File Uploads**: Multer with local disk storage / Cloudinary integration
+- **Email Service**: Nodemailer with Gmail SMTP / Custom SMTP transport
 - **Security**: Helmet, CORS, NoSQL sanitization, rate limiting, and graceful shutdown handlers
 
 ---
@@ -110,25 +111,130 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-#### Backend `.env` Configuration
+#### Backend `.env` Configuration (`backend/.env`)
+
+Below is the complete template for `backend/.env`:
+
 ```env
+# -----------------------------------------------------------------------------
+# Server Configuration
+# -----------------------------------------------------------------------------
 NODE_ENV=development
 PORT=5000
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+# Local MongoDB:
 MONGODB_URI=mongodb://localhost:27017/careerhub
-JWT_SECRET=your_super_secret_jwt_key_here
+# Or MongoDB Atlas Cloud:
+# MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/careerhub?retryWrites=true&w=majority
+
+# -----------------------------------------------------------------------------
+# Authentication & Security
+# -----------------------------------------------------------------------------
+JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRES_IN=7d
+
+# -----------------------------------------------------------------------------
+# Client Origins & CORS Whitelist
+# -----------------------------------------------------------------------------
 FRONTEND_URL=http://localhost:5173
 CLIENT_URL=http://localhost:5173
+
+# -----------------------------------------------------------------------------
+# Automated Disaster Recovery & Backups
+# -----------------------------------------------------------------------------
 AUTO_BACKUP_INTERVAL_HOURS=12
 
-# Optional: Cloudinary for cloud media storage (falls back to local /uploads if not set)
+# -----------------------------------------------------------------------------
+# Cloudinary Configuration (Optional - falls back to local disk /uploads)
+# -----------------------------------------------------------------------------
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# -----------------------------------------------------------------------------
+# Email / Nodemailer SMTP Configuration (For OTP Delivery & Verification)
+# -----------------------------------------------------------------------------
+# Option A: Gmail SMTP (Recommended for development/testing)
+# Note: Use a 16-character Google App Password from: https://myaccount.google.com/apppasswords
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_16_character_app_password
+EMAIL_FROM="CareerHub Security" <your_email@gmail.com>
+
+# Option B: Custom SMTP Server (SendGrid, Mailgun, AWS SES, Postmark)
+# SMTP_HOST=smtp.mailgun.org
+# SMTP_PORT=587
+# SMTP_USER=your_smtp_username
+# SMTP_PASS=your_smtp_password
 ```
 
-#### Frontend `.env` Configuration
+#### Backend Environment Variables Reference
+
+| Variable | Required? | Default | Description |
+|---|---|---|---|
+| `PORT` | Optional | `5000` | Port on which the Express & Socket.IO server listens. |
+| `NODE_ENV` | Optional | `development` | Environment mode (`development`, `production`, `test`). In production, cookies are flagged `secure` and error details are shielded. |
+| `MONGODB_URI` | **Required** | `mongodb://localhost:27017/careerhub` | MongoDB connection URI (local instance or MongoDB Atlas cluster connection string). |
+| `JWT_SECRET` | **Required** | — | Long, random cryptographic secret key used to sign and verify JSON Web Tokens. |
+| `JWT_EXPIRES_IN` | Optional | `7d` | Token lifetime duration string (e.g. `7d`, `24h`, `1h`). |
+| `FRONTEND_URL` | Optional | `http://localhost:5173` | Allowed origin for frontend client requests and CORS policies. |
+| `CLIENT_URL` | Optional | `http://localhost:5173` | Socket.IO client origin whitelist (used for WebSocket handshakes). |
+| `AUTO_BACKUP_INTERVAL_HOURS` | Optional | `12` | Frequency in hours to execute automated `mongodump` snapshots. |
+| `CLOUDINARY_CLOUD_NAME` | Optional | — | Cloudinary cloud name for uploading resumes and profile avatars. |
+| `CLOUDINARY_API_KEY` | Optional | — | Cloudinary API Key. |
+| `CLOUDINARY_API_SECRET` | Optional | — | Cloudinary API Secret. |
+| `EMAIL_SERVICE` | Optional | `gmail` | Email provider preset for Nodemailer (e.g., `gmail`). |
+| `EMAIL_USER` | Optional | — | Email username / sender address for OTP delivery. |
+| `EMAIL_PASS` | Optional | — | Email sender password or Google App Password. |
+| `EMAIL_FROM` | Optional | `"CareerHub Security" <EMAIL_USER>` | Formatted sender name & address in outgoing mail header. |
+| `SMTP_HOST` | Optional | — | Custom SMTP server hostname (if `EMAIL_SERVICE` is not used). |
+| `SMTP_PORT` | Optional | `587` | Custom SMTP server port (usually `587` for TLS or `465` for SSL). |
+| `SMTP_USER` | Optional | — | Custom SMTP authentication username. |
+| `SMTP_PASS` | Optional | — | Custom SMTP authentication password. |
+
+#### Service Setup Guides
+
+<details>
+<summary><b>1. Gmail App Password Setup (for real OTP emails)</b></summary>
+
+1. Log into your Google account and navigate to [Google Account Security](https://myaccount.google.com/security).
+2. Enable **2-Step Verification** if not already active.
+3. Search for **App passwords** or go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+4. Create an app name (e.g., `CareerHub`) and click **Create**.
+5. Copy the generated 16-character passcode and paste it into `EMAIL_PASS` in `backend/.env`.
+6. Set `EMAIL_USER=your_email@gmail.com` and `EMAIL_SERVICE=gmail`.
+</details>
+
+<details>
+<summary><b>2. MongoDB Atlas Setup (Cloud Database)</b></summary>
+
+1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Create a Database User with read and write permissions under **Database Access**.
+3. Under **Network Access**, whitelist your IP address or add `0.0.0.0/0` (allow access from anywhere).
+4. Click **Connect** $\rightarrow$ **Drivers** (Node.js) and copy the connection string.
+5. In `backend/.env`, set:
+   ```env
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/careerhub?retryWrites=true&w=majority
+   ```
+</details>
+
+<details>
+<summary><b>3. Cloudinary Setup (Cloud Media & Resume Storage)</b></summary>
+
+1. Register a free account at [Cloudinary](https://cloudinary.com/).
+2. On your Cloudinary Dashboard, copy the **Cloud Name**, **API Key**, and **API Secret**.
+3. Populate `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `backend/.env`.
+4. If left blank, CareerHub automatically falls back to local disk storage in `backend/uploads/`.
+</details>
+
+---
+
+#### Frontend `.env` Configuration (`frontend/.env`)
 ```env
+# URL pointing to the Backend API server
 VITE_API_URL=http://localhost:5000
 ```
 
@@ -287,6 +393,8 @@ carrerHub/
 │   ├── services/            # Upload service and automated Backup/Recovery service
 │   ├── sockets/             # Socket.IO lifecycle, presence, and chat events
 │   ├── uploads/             # Local attachments, avatars, and resumes storage
+│   ├── .env.example         # Backend environment variables template
+│   ├── README.md            # Dedicated backend documentation
 │   └── index.js             # HTTP server entry point with graceful shutdown
 │
 ├── frontend/
@@ -307,6 +415,7 @@ carrerHub/
 │   │   ├── socket/          # Socket.IO client manager
 │   │   ├── store/           # Redux Toolkit store and slices
 │   │   └── index.css        # Tailwind directives and custom utility classes
+│   ├── .env.example         # Frontend environment variables template
 │   └── package.json
 ├── package.json
 └── README.md

@@ -8,9 +8,9 @@ import { useSelector } from "react-redux";
 import LogoutButton from "../auth/LogoutButton";
 
 const navClass = ({ isActive }) =>
-  `rounded-lg px-3 py-2.5 transition ${
+  `rounded-lg px-3 py-2 transition font-medium ${
     isActive
-      ? "bg-brand/10 text-brand"
+      ? "bg-brand text-white shadow-sm"
       : "text-slate-600 hover:bg-slate-100 hover:text-brand dark:text-slate-300 dark:hover:bg-slate-800"
   }`;
 
@@ -72,10 +72,14 @@ export default function SiteHeader() {
           {user ? (
             <>
               <Link
-                className="hidden max-w-40 truncate text-sm font-semibold transition hover:text-brand lg:block"
                 to="/profile"
+                aria-label={`View ${user.name}'s profile`}
+                className="hidden max-w-48 items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-brand dark:text-slate-200 dark:hover:bg-slate-800 lg:flex"
               >
-                {user.name}
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand/10 text-xs font-bold text-brand dark:bg-brand/20">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+                <span className="truncate">{user.name}</span>
               </Link>
               <div className="hidden lg:block">
                 <LogoutButton />

@@ -48,7 +48,7 @@ export default function DashboardPage() {
         <p className="text-xs font-bold uppercase tracking-wider text-brand">
           {user?.role} dashboard
         </p>
-        <h1 className="mt-1 text-2xl font-extrabold dark:text-white sm:text-3xl">
+        <h1 className="mt-1 font-sans text-2xl font-extrabold tracking-tight dark:text-white sm:text-3xl">
           Your workspace, at a glance.
         </h1>
       </div>
@@ -67,12 +67,33 @@ export default function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
           <h2 className="font-bold text-slate-800 dark:text-white">Platform activity</h2>
-          <div className="mt-4 h-64">
+          <div className="mt-4 h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.activity}>
-                <XAxis dataKey="name" />
-                <Tooltip />
-                <Bar dataKey="value" fill="#635bff" radius={[6, 6, 0, 0]} />
+              <BarChart
+                data={data.activity}
+                margin={{ top: 12, right: 12, left: 12, bottom: 4 }}
+              >
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 12 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e293b",
+                    borderRadius: "8px",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "12px",
+                  }}
+                />
+                <Bar
+                  dataKey="value"
+                  fill="#635bff"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={48}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -101,7 +122,7 @@ export default function DashboardPage() {
               </div>
             ))}
             {!activityList?.length && (
-              <p className="text-xs text-slate-400 italic">No recent activity recorded yet.</p>
+              <p className="text-xs italic text-slate-400">No recent activity recorded yet.</p>
             )}
           </div>
         </section>

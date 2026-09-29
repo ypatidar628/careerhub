@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiBookmark, FiTrash2, FiExternalLink, FiMapPin, FiBriefcase, FiArrowRight } from "react-icons/fi";
+import { FiBookmark, FiTrash2, FiExternalLink, FiMapPin, FiBriefcase, FiCompass } from "react-icons/fi";
 import toast from "react-hot-toast";
 import client from "../../api/client";
 
@@ -46,21 +46,21 @@ export default function SavedJobs() {
 
   if (!savedList.length) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-700">
-        <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-brand/10 text-2xl text-brand dark:bg-brand/20">
+      <div className="flex flex-col items-start justify-start rounded-3xl border border-dashed border-slate-300 p-8 text-left dark:border-slate-700 sm:p-10">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-brand/10 text-2xl text-brand dark:bg-brand/20">
           <FiBookmark />
         </div>
         <h3 className="text-lg font-bold text-slate-800 dark:text-white">
           No Saved Jobs Yet
         </h3>
-        <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
           Bookmark interesting job opportunities while exploring to review or apply to them later.
         </p>
         <Link
           to="/jobs"
           className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand/90"
         >
-          Explore Open Roles <FiArrowRight />
+          <FiCompass className="text-base" /> Explore Open Roles
         </Link>
       </div>
     );

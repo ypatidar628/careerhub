@@ -6,6 +6,7 @@ import {
   findById,
   publicUser,
 } from "../models/userModel.js";
+import { generateAndSendOtp, verifyOtp } from "../services/otpService.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,8 +26,47 @@ const issue = (res, user) => {
   return res.json({ user: publicUser(user), token });
 };
 
+/**
+ * Dispatch or Resend OTP code using Nodemailer
+ * Valid for 30 seconds
+ */
+export const requestOtp = async (req, res) => {
+  const rawEmail = req.body.email;
+  const purpose = req.body.purpose || "registration";
+
+  if (!rawEmail || typeof rawEmail !== "string" || !EMAIL_REGEX.test(rawEmail.trim())) {
+    return res.status(400).json({ message: "A valid email address is required." });
+  }
+
+  const email = rawEmail.trim().toLowerCase();
+
+  // If registering, check if email is already taken
+  if (purpose === "registration") {
+    const existing = await findByEmail(email);
+    if (existing) {
+      return res.status(409).json({ message: "An account with that email already exists." });
+    }
+  }
+
+  try {
+    const result = await generateAndSendOtp(email, purpose);
+    return res.json({
+      success: true,
+      message: "Verification code sent to your email. Valid for 30 seconds.",
+      expiresInSeconds: 30,
+      code: result.code, // Included for dev testing
+      previewUrl: result.previewUrl,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to send verification code. Please try again.",
+      error: error.message,
+    });
+  }
+};
+
 export const register = async (req, res) => {
-  const { name, password, role = "candidate" } = req.body;
+  const { name, password, role = "candidate", otp } = req.body;
   const rawEmail = req.body.email;
 
   if (!rawEmail || typeof rawEmail !== "string") {
@@ -49,6 +89,14 @@ export const register = async (req, res) => {
       message:
         "Please provide a valid name, email, password (min 8 chars), and role ('candidate' or 'recruiter').",
     });
+  }
+
+  // If OTP is provided, verify it against the 30s expiration store
+  if (otp) {
+    const otpValidation = verifyOtp(email, String(otp).trim());
+    if (!otpValidation.valid) {
+      return res.status(400).json({ message: otpValidation.reason });
+    }
   }
 
   const existingUser = await findByEmail(email);

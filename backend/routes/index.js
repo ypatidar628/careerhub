@@ -5,6 +5,7 @@ import {
   logout,
   me,
   refresh,
+  requestOtp,
 } from "../controllers/authController.js";
 import {
   create,
@@ -59,6 +60,7 @@ const router = Router();
 router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // Auth Routes (Protected with strict brute-force rate limiter)
+router.post("/auth/otp", authRateLimiter, requestOtp);
 router.post("/auth/register", authRateLimiter, register);
 router.post("/auth/login", authRateLimiter, login);
 router.post("/auth/logout", logout);

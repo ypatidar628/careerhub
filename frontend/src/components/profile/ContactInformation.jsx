@@ -9,10 +9,10 @@ export default function ContactInformation({
     <div className="space-y-4">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
             Contact Information
-          </h3>
-          <p className="text-xs text-slate-400">
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-400">
             Residential and mailing address coordinates.
           </p>
         </div>
