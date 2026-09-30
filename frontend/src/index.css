@@ -1,6 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
-@tailwind base; @tailwind components; @tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   html,
   body,
   #root {
@@ -20,10 +26,79 @@
     @apply transition-colors;
   }
 }
-.font-mono-display { font-family: 'DM Mono', monospace; }
-.auth-stage { perspective: 1400px; }
-.auth-card { transform-style: preserve-3d; will-change: transform; }
-.hero-orbit { animation: orbit 15s linear infinite; }
-.float-slow { animation: float 6s ease-in-out infinite; }
-@keyframes orbit { to { transform: rotate(360deg); } }
-@keyframes float { 50% { transform: translateY(-14px); } }
+
+.font-mono-display {
+  font-family: 'DM Mono', monospace;
+}
+
+/* 3D Perspective & Motion Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Page Transition Animation */
+.page-transition {
+  animation: pageFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes pageFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ambient 3D Orbit & Float */
+.hero-orbit {
+  animation: orbit 18s linear infinite;
+}
+
+.float-slow {
+  animation: float 6s ease-in-out infinite;
+}
+
+.float-medium {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Shimmer & Glow Effects */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

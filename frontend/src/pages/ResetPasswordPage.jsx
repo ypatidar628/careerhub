@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FiLock, FiEye, FiEyeOff, FiArrowLeft, FiCheckCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
+import client from "../api/client";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -10,6 +11,10 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const email = location.state?.email || "";
+  const otp = location.state?.otp || "";
 
   // Responsive breakpoint tracking matching AuthPage
   const [isDesktop, setIsDesktop] = useState(() =>
@@ -24,10 +29,10 @@ export default function ResetPasswordPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!password || password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+    if (!password || password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -35,12 +40,28 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    if (!email) {
+      toast.error("Session expired or missing email. Please start from Forgot Password.");
+      navigate("/forgot-password");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Password updated successfully! Please log in.");
+    try {
+      const res = await client.post("/auth/reset-password", {
+        email,
+        otp,
+        password,
+      });
+
+      toast.success(res.data?.message || "Password updated successfully! Please log in.");
       navigate("/auth");
-    }, 800);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to reset password. Please try again.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formContent = (
@@ -56,7 +77,7 @@ export default function ResetPasswordPage() {
             Set new password
           </h1>
           <p className="mt-1 text-xs text-slate-500 font-medium">
-            Your new password must be at least 6 characters and different from previously used passwords.
+            {email ? `Resetting password for ${email}.` : "Your new password must be at least 8 characters."}
           </p>
         </div>
 
@@ -85,6 +106,7 @@ export default function ResetPasswordPage() {
                 {showPassword ? <FiEyeOff className="text-sm" /> : <FiEye className="text-sm" />}
               </button>
             </div>
+            <p className="mt-1 text-[10px] text-slate-500">Min 8 characters.</p>
           </div>
 
           {/* Confirm Password */}

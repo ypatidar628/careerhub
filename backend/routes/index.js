@@ -6,6 +6,7 @@ import {
   me,
   refresh,
   requestOtp,
+  resetPassword,
 } from "../controllers/authController.js";
 import {
   create,
@@ -50,6 +51,7 @@ import {
   getSavedJobs,
   getSavedJobIds,
 } from "../controllers/savedJobController.js";
+import superAdminRoutes from "./superAdminRoutes.js";
 import { allowRoles, requireAuth } from "../middleware/auth.js";
 import { upload } from "../config/upload.js";
 import { authRateLimiter, uploadRateLimiter } from "../middleware/security.js";
@@ -61,11 +63,16 @@ router.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // Auth Routes (Protected with strict brute-force rate limiter)
 router.post("/auth/otp", authRateLimiter, requestOtp);
+router.post("/auth/reset-password", authRateLimiter, resetPassword);
 router.post("/auth/register", authRateLimiter, register);
 router.post("/auth/login", authRateLimiter, login);
 router.post("/auth/logout", logout);
 router.get("/auth/me", requireAuth, me);
 router.post("/auth/refresh", requireAuth, refresh);
+
+// Super Admin & Admin System Routes
+router.use("/super-admin", superAdminRoutes);
+router.use("/admin", superAdminRoutes);
 
 // Jobs Discovery & Management
 router.get("/jobs", jobs);

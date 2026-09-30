@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import client from "../api/client";
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from "recharts";
 import StatCard from "../components/common/StatCard";
-import { FiBookmark, FiBriefcase, FiUsers } from "react-icons/fi";
+import { FiBookmark, FiBriefcase, FiUsers, FiShield, FiArrowRight } from "react-icons/fi";
+import { FaCrown, FaShieldAlt } from "react-icons/fa";
 
 export default function DashboardPage() {
   const user = useSelector((s) => s.auth.user);
@@ -15,8 +17,10 @@ export default function DashboardPage() {
 
   if (!data) return <p className="text-slate-500 py-6">Loading dashboard…</p>;
 
-  const admin = user?.role === "admin";
-  const recruiter = user?.role === "recruiter";
+  const userRole = String(user?.role || "").toUpperCase();
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const admin = isSuperAdmin || userRole === "ADMIN";
+  const recruiter = userRole === "RECRUITER";
 
   const stats = admin
     ? [
@@ -44,9 +48,34 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-6">
+      {admin && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 p-4 text-white sm:flex-row sm:items-center sm:justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-lg">
+              <FiShield />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-2">{isSuperAdmin ? <FaCrown className="text-amber-400" /> : <FaShieldAlt className="text-purple-400" />} <span>{isSuperAdmin ? "Single Super Admin Portal" : "Admin Control Center"}</span></span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Full user management, platform audit logs, candidates, recruiters, and job controls.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/super-admin/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-md transition hover:bg-amber-400"
+          >
+            <span>Launch System Control</span>
+            <FiArrowRight />
+          </Link>
+        </div>
+      )}
+
       <div>
         <p className="text-xs font-bold uppercase tracking-wider text-brand">
-          {user?.role} dashboard
+          {userRole} dashboard
         </p>
         <h1 className="mt-1 font-sans text-2xl font-extrabold tracking-tight dark:text-white sm:text-3xl">
           Your workspace, at a glance.

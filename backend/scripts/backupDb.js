@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  console.error("❌ Error: MONGODB_URI is not defined in backend/.env");
+  console.error(" Error: MONGODB_URI is not defined in backend/.env");
   process.exit(1);
 }
 
@@ -26,7 +26,7 @@ if (!fs.existsSync(backupRoot)) {
 }
 
 console.log("=========================================");
-console.log(" 📦 CareerHub Database Backup");
+console.log("  CareerHub Database Backup");
 console.log("=========================================");
 console.log(`Connecting to: ${maskedUri}`);
 console.log(`Saving backup to: ${targetDir}\n`);
@@ -37,11 +37,11 @@ const dumpProcess = spawn("mongodump", [`--uri=${uri}`, `--out=${targetDir}`], {
 
 dumpProcess.on("close", (code) => {
   if (code === 0) {
-    console.log("\n✅ Database backup completed successfully!");
-    console.log(`📁 Backup location: ${targetDir}`);
+    console.log("\n Database backup completed successfully!");
+    console.log(` Backup location: ${targetDir}`);
     console.log("=========================================");
   } else {
-    console.error(`\n❌ Backup process exited with code ${code}`);
+    console.error(`\n Backup process exited with code ${code}`);
     process.exit(code || 1);
   }
 });

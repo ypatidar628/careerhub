@@ -32,12 +32,12 @@ export const mongoSanitize = (req, _res, next) => {
 };
 
 /**
- * Middleware: Strict Rate Limiter for Authentication (Brute Force Protection)
- * Max 10 attempts per 15 minutes per IP
+ * Middleware: Rate Limiter for Authentication
+ * Generous limits during development to allow testing without lockout
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 15,
+  limit: process.env.NODE_ENV === "production" ? 25 : 120,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -51,7 +51,7 @@ export const authRateLimiter = rateLimit({
  */
 export const uploadRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

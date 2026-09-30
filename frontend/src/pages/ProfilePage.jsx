@@ -68,7 +68,7 @@ export default function ProfilePage() {
     const profile = user.profile || {};
     setForm({
       name: user.name || "",
-      phone: user.phone || profile.phone || "",
+      phone: (user.phone || profile.phone || "").replace(/\D/g, "").slice(0, 10),
       department: profile.department || profile.education || "",
       enrollmentNumber: profile.enrollmentNumber || "",
       address: profile.address || "",
@@ -105,7 +105,11 @@ export default function ProfilePage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    let finalValue = value;
+    if (name === "phone") {
+      finalValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    setForm((prev) => ({ ...prev, [name]: finalValue }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -132,8 +136,8 @@ export default function ProfilePage() {
       newErrors.name = "Full name must be at least 2 characters.";
     }
 
-    if (form.phone && !/^[+0-9\s-()]{7,20}$/.test(form.phone.trim())) {
-      newErrors.phone = "Enter a valid phone number.";
+    if (form.phone && !/^\d{10}$/.test(form.phone.trim())) {
+      newErrors.phone = "Phone number must be exactly 10 digits with no characters.";
     }
 
     setErrors(newErrors);
@@ -156,7 +160,7 @@ export default function ProfilePage() {
     try {
       const payload = {
         name: form.name.trim(),
-        phone: form.phone.trim(),
+        phone: form.phone ? form.phone.replace(/\D/g, "").slice(0, 10) : "",
         department: form.department.trim(),
         enrollmentNumber: form.enrollmentNumber.trim(),
         address: form.address.trim(),
@@ -175,7 +179,7 @@ export default function ProfilePage() {
       const { data } = await client.patch("/profile", payload);
       dispatch(updateUser(data.user));
       setIsEditing(false);
-      toast.success("✓ Profile updated successfully");
+      toast.success("Profile updated successfully");
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Unable to update profile. Please try again.",

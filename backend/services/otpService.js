@@ -1,10 +1,10 @@
 import { sendOtpEmail } from "./mailService.js";
 
-// In-memory store for active OTPs: email -> { code, expiresAt, createdAt }
+// In-memory store for active OTPs: email -> { code, expiresAt, createdAt, purpose }
 const otpStore = new Map();
 
-// OTP lifetime: 30 seconds
-const OTP_TTL_MS = 30 * 1000;
+// OTP lifetime: 10 minutes (600,000 ms) for ample user reading and delivery time
+const OTP_TTL_MS = 10 * 60 * 1000;
 
 export const generateAndSendOtp = async (email, purpose = "registration") => {
   const normalizedEmail = email.trim().toLowerCase();
@@ -17,6 +17,7 @@ export const generateAndSendOtp = async (email, purpose = "registration") => {
     code,
     expiresAt,
     createdAt: Date.now(),
+    purpose,
   });
 
   // Dispatch email via Nodemailer asynchronously
@@ -25,12 +26,13 @@ export const generateAndSendOtp = async (email, purpose = "registration") => {
   return {
     success: true,
     code, // Returned for dev/preview display
-    expiresInSeconds: 30,
+    expiresInSeconds: 600,
     previewUrl: mailResult.previewUrl,
+    mailSent: mailResult.success,
   };
 };
 
-export const verifyOtp = (email, enteredCode) => {
+export const verifyOtp = (email, enteredCode, purpose = null) => {
   const normalizedEmail = email.trim().toLowerCase();
   const record = otpStore.get(normalizedEmail);
 
@@ -51,14 +53,21 @@ export const verifyOtp = (email, enteredCode) => {
     otpStore.delete(normalizedEmail);
     return {
       valid: false,
-      reason: "Verification code expired (valid for 30s). Please request a new code.",
+      reason: "Verification code expired (valid for 10 mins). Please request a new code.",
     };
   }
 
-  if (record.code !== enteredCode) {
+  if (record.code !== String(enteredCode).trim()) {
     return {
       valid: false,
       reason: "Incorrect verification code. Please check your email and try again.",
+    };
+  }
+
+  if (purpose && record.purpose && record.purpose !== purpose) {
+    return {
+      valid: false,
+      reason: `Verification code was not issued for ${purpose}.`,
     };
   }
 

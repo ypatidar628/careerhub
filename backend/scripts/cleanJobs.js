@@ -14,13 +14,13 @@ async function cleanJobs() {
     await mongoose.connect(uri);
 
     const result = await Job.deleteMany({});
-    console.log(`✅ Successfully deleted ${result.deletedCount} jobs from the database.`);
+    console.log(` Successfully deleted ${result.deletedCount} jobs from the database.`);
 
     await mongoose.connection.close();
     console.log("Database connection closed.");
     process.exit(0);
   } catch (err) {
-    console.error("❌ Failed to clean jobs:", err.message);
+    console.error(" Failed to clean jobs:", err.message);
     process.exit(1);
   }
 }

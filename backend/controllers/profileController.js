@@ -37,6 +37,17 @@ export const update = async (req, res) => {
     Object.entries(req.body).filter(([key]) => allowed.includes(key)),
   );
 
+  // Validate phone: if provided and not empty, must be exactly 10 digits with no characters
+  if (profileData.phone !== undefined && profileData.phone !== null && profileData.phone !== "") {
+    const phoneStr = String(profileData.phone).trim();
+    if (!/^\d{10}$/.test(phoneStr)) {
+      return res.status(400).json({
+        message: "Phone number must be exactly 10 digits with no characters.",
+      });
+    }
+    profileData.phone = phoneStr;
+  }
+
   const user = await updateProfile(req.user.id, profileData);
 
   if (!user) {

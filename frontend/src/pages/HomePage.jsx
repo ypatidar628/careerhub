@@ -6,14 +6,16 @@ import {
   FiCheckCircle,
   FiSearch,
   FiZap,
-  FiTrendingUp,
-  FiUsers,
   FiBriefcase,
+  FiCompass,
+  FiShield,
+  FiLayers,
 } from "react-icons/fi";
 import SectionHeading from "../components/common/SectionHeading";
 import JobCard from "../components/jobs/JobCard";
+import Hero3DVisual from "../components/home/Hero3DVisual";
+import TiltCard3D from "../components/common/TiltCard3D";
 import client from "../api/client";
-import careerJourney from "../assets/career-journey-3d.png";
 
 export default function HomePage() {
   const hero = useRef();
@@ -49,31 +51,23 @@ export default function HomePage() {
         { y: 28, opacity: 0 },
         { y: 0, opacity: 1, stagger: 0.11, duration: 0.75, ease: "power3.out" },
       );
-      gsap.to(".hero-image", {
-        y: -10,
-        rotation: 1.5,
-        duration: 3.4,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-      });
     }, hero);
     return () => ctx.revert();
   }, []);
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
+      {/* Hero Section with Interactive 3D Canvas */}
       <section
         ref={hero}
         className="relative isolate overflow-hidden bg-[#080b20] px-4 py-12 text-white sm:px-6 sm:py-16 md:py-24 lg:px-8"
       >
-        <div className="absolute -left-32 top-10 h-80 w-80 rounded-full bg-brand/30 blur-3xl" />
-        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-400/15 blur-3xl" />
+        <div className="absolute -left-32 top-10 h-80 w-80 rounded-full bg-brand/30 blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-cyan-400/15 blur-3xl pointer-events-none" />
         <div className="w-full grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]">
           <div className="relative z-10">
-            <span className="hero-reveal font-mono-display rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs text-cyan-100">
-              <FiZap className="mr-2 inline" /> CAREERS, REIMAGINED
+            <span className="hero-reveal font-mono-display rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs text-cyan-100 inline-flex items-center">
+              <FiZap className="mr-2 inline text-cyan-400" /> CAREERS, REIMAGINED
             </span>
             <h1 className="hero-reveal mt-6 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-7xl md:leading-[.98]">
               Find work that feels{" "}
@@ -99,7 +93,7 @@ export default function HomePage() {
                   placeholder="Job title, skill, or company"
                 />
               </div>
-              <button className="rounded-xl bg-brand px-5 py-3 font-semibold text-white transition hover:scale-[1.03] hover:bg-indigo-500">
+              <button className="rounded-xl bg-brand px-5 py-3 font-semibold text-white transition hover:scale-[1.03] hover:bg-indigo-500 cursor-pointer">
                 Search
               </button>
             </form>
@@ -110,26 +104,15 @@ export default function HomePage() {
               <span>
                 <b className="text-white">Verified</b> hiring teams
               </span>
+              <span>
+                <b className="text-white">3D</b> Interactive Matching
+              </span>
             </div>
           </div>
-          <div className="hero-reveal relative mx-auto w-full max-w-md lg:max-w-none">
-            <div className="hero-orbit absolute inset-2 rounded-[2.4rem] border border-dashed border-cyan-200/30" />
-            <img
-              className="hero-image relative z-10 w-full max-h-[520px] object-contain rounded-[2rem] border border-white/15 shadow-[0_30px_80px_-20px_rgba(85,91,255,.7)]"
-              src={careerJourney}
-              alt="A professional moving upward through glowing career opportunities"
-            />
-            <div className="float-slow absolute -left-2 bottom-8 z-20 hidden rounded-2xl border border-white/20 bg-slate-950/70 p-4 shadow-xl backdrop-blur sm:block md:-left-6">
-              <FiTrendingUp className="text-xl text-cyan-300" />
-              <p className="mt-2 text-xs text-slate-300">Your trajectory</p>
-              <p className="font-mono-display font-bold text-white">
-                +24% momentum
-              </p>
-            </div>
-            <div className="absolute -right-2 top-10 z-20 hidden rounded-2xl border border-white/20 bg-white/90 p-3 text-ink shadow-xl sm:block md:-right-4">
-              <FiUsers className="text-brand" />
-              <p className="mt-1 text-xs font-bold">Teams are hiring</p>
-            </div>
+
+          {/* Interactive 3D Hero Visual */}
+          <div className="hero-reveal relative">
+            <Hero3DVisual />
           </div>
         </div>
       </section>
@@ -181,7 +164,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Why CareerHub */}
+      {/* Why CareerHub with 3D Tilt Feature Cards */}
       <section className="w-full bg-ink px-4 py-12 text-white sm:px-6 sm:py-20 lg:px-8">
         <div>
           <SectionHeading
@@ -191,27 +174,38 @@ export default function HomePage() {
           />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              [
-                "Match with intent",
-                "Discover roles aligned to your skills and ambitions.",
-              ],
-              [
-                "Show your best work",
-                "A polished profile makes every application stronger.",
-              ],
-              [
-                "Move faster",
-                "Stay organized from application through interview.",
-              ],
-            ].map(([t, d]) => (
-              <div
-                key={t}
-                className="group rounded-2xl bg-white/10 p-6 transition duration-300 hover:-translate-y-2 hover:bg-white/15"
+              {
+                icon: FiCompass,
+                title: "Match with intent",
+                desc: "Discover roles aligned to your skills, verified certifications, and career ambitions.",
+                accent: "text-cyan-400",
+                bg: "bg-cyan-500/10",
+              },
+              {
+                icon: FiShield,
+                title: "Show your best work",
+                desc: "A polished, structured profile makes every application stand out to hiring decision-makers.",
+                accent: "text-indigo-400",
+                bg: "bg-indigo-500/10",
+              },
+              {
+                icon: FiLayers,
+                title: "Move faster",
+                desc: "Stay organized from initial application through real-time recruiter chat and interview.",
+                accent: "text-emerald-400",
+                bg: "bg-emerald-500/10",
+              },
+            ].map((item, idx) => (
+              <TiltCard3D
+                key={idx}
+                className="group rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm transition duration-300 hover:border-white/20 hover:bg-white/[0.08]"
               >
-                <FiCheckCircle className="text-2xl text-mint transition group-hover:rotate-12" />
-                <h3 className="mt-4 text-xl font-bold">{t}</h3>
-                <p className="mt-2 text-slate-300">{d}</p>
-              </div>
+                <div className={`mb-5 inline-grid h-12 w-12 place-items-center rounded-2xl ${item.bg} ${item.accent} text-2xl transition duration-300 group-hover:scale-110`}>
+                  <item.icon />
+                </div>
+                <h3 className="text-xl font-bold tracking-tight text-white">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.desc}</p>
+              </TiltCard3D>
             ))}
           </div>
         </div>

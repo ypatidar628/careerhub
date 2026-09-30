@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiMail, FiArrowLeft, FiKey } from "react-icons/fi";
 import toast from "react-hot-toast";
+import client from "../api/client";
 import OtpVerification from "../components/auth/OtpVerification";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [step, setStep] = useState("request"); // "request" | "otp"
   const [loading, setLoading] = useState(false);
+  const [demoCode, setDemoCode] = useState("");
   const navigate = useNavigate();
 
   // Responsive breakpoint tracking matching AuthPage
@@ -23,34 +25,68 @@ export default function ForgotPasswordPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleRequestReset = (e) => {
+  const handleRequestReset = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !/\S+@\S+\.\S+/.test(cleanEmail)) {
       toast.error("Please enter a valid email address.");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Verification code sent to your email!");
+    try {
+      const res = await client.post("/auth/otp", {
+        email: cleanEmail,
+        purpose: "reset",
+      });
+
+      setDemoCode(res.data?.code || "");
+      toast.success(res.data?.message || "Verification code sent to your email!", { duration: 6000 });
       setStep("otp");
-    }, 800);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to send verification code. Please check your email.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    try {
+      const res = await client.post("/auth/otp", {
+        email: cleanEmail,
+        purpose: "reset",
+      });
+      setDemoCode(res.data?.code || "");
+      toast.success("Fresh verification code sent to your email!", { duration: 6000 });
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to resend verification code.";
+      toast.error(msg);
+      throw err;
+    }
   };
 
   const handleVerifyOtp = async (otpCode) => {
     // Navigate to Reset Password page with email and otp
     toast.success("Code verified! You can now set a new password.");
-    navigate("/reset-password", { state: { email, otp: otpCode } });
+    navigate("/reset-password", { state: { email: email.trim().toLowerCase(), otp: otpCode } });
   };
 
   if (step === "otp") {
     return (
       <OtpVerification
         email={email}
+        title="Verify Reset Code"
+        subtitle="Enter the 6-digit verification code sent to reset your password."
         onVerify={handleVerifyOtp}
-        onResend={() => toast.success("A fresh OTP code has been sent.")}
+        onResend={handleResendOtp}
+        onBack={() => setStep("request")}
+        backText="Back to Email Entry"
         isPage={true}
-        demoCode="123456"
+        demoCode={demoCode}
+        timerSeconds={30}
+        codeValiditySeconds={600}
       />
     );
   }
@@ -68,7 +104,7 @@ export default function ForgotPasswordPage() {
             Forgot password?
           </h1>
           <p className="mt-1 text-xs text-slate-500 font-medium">
-            No worries! Enter your registered email address and we'll send you an OTP verification code.
+            Enter your registered email address and we'll send a 6-digit OTP verification code.
           </p>
         </div>
 
@@ -146,7 +182,7 @@ export default function ForgotPasswordPage() {
       {/* Bottom Subtle Note */}
       <div className="z-10">
         <p className="text-[11px] font-medium tracking-wide text-slate-400">
-          Verification codes expire after 10 minutes for your security.
+          Verification codes are valid for 10 minutes for your security.
         </p>
       </div>
     </div>

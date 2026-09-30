@@ -76,10 +76,20 @@ export default function PersonalInformation({
             <input
               name="phone"
               type="tel"
+              inputMode="numeric"
+              maxLength={10}
               value={form.phone}
               onChange={onChange}
+              onKeyDown={(e) => {
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+              }}
               disabled={!isEditing}
-              placeholder="+91 98765 43210"
+              placeholder="10-digit mobile number (e.g. 9876543210)"
               className={`w-full rounded-2xl border p-3 pl-10 text-xs font-semibold outline-none transition ${
                 !isEditing
                   ? "border-slate-200 bg-slate-100/70 text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 cursor-not-allowed"

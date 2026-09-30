@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  console.error("❌ Error: MONGODB_URI is not defined in backend/.env");
+  console.error(" Error: MONGODB_URI is not defined in backend/.env");
   process.exit(1);
 }
 
@@ -22,7 +22,7 @@ let restorePath = process.argv[2];
 
 if (!restorePath) {
   if (!fs.existsSync(backupRoot)) {
-    console.error("❌ No backups folder found at:", backupRoot);
+    console.error(" No backups folder found at:", backupRoot);
     process.exit(1);
   }
 
@@ -34,18 +34,18 @@ if (!restorePath) {
     .reverse();
 
   if (entries.length === 0) {
-    console.error("❌ No backup directories found in:", backupRoot);
+    console.error(" No backup directories found in:", backupRoot);
     process.exit(1);
   }
 
   restorePath = path.join(backupRoot, entries[0]);
-  console.log(`ℹ️ No backup path specified. Using latest backup: ${entries[0]}`);
+  console.log(`[INFO] No backup path specified. Using latest backup: ${entries[0]}`);
 } else {
   restorePath = path.resolve(process.cwd(), restorePath);
 }
 
 if (!fs.existsSync(restorePath)) {
-  console.error("❌ Backup path does not exist:", restorePath);
+  console.error(" Backup path does not exist:", restorePath);
   process.exit(1);
 }
 
@@ -61,7 +61,7 @@ if (subDirs.length === 1 && !fs.readdirSync(restorePath).some((f) => f.endsWith(
 }
 
 console.log("=========================================");
-console.log(" 🔄 CareerHub Database Restore / Recovery");
+console.log("  CareerHub Database Restore / Recovery");
 console.log("=========================================");
 console.log(`Target Database: ${maskedUri}`);
 console.log(`Restoring From:  ${targetRestoreDir}\n`);
@@ -73,10 +73,10 @@ const restoreProcess = spawn("mongorestore", [`--uri=${uri}`, "--drop", targetRe
 
 restoreProcess.on("close", (code) => {
   if (code === 0) {
-    console.log("\n✅ Database restoration completed successfully!");
+    console.log("\n Database restoration completed successfully!");
     console.log("=========================================");
   } else {
-    console.error(`\n❌ Restore process exited with code ${code}`);
+    console.error(`\n Restore process exited with code ${code}`);
     process.exit(code || 1);
   }
 });

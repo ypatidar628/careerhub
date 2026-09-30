@@ -18,7 +18,12 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   name: z.string().min(2, "Enter your name"),
   email: z.string().email("Enter a valid email"),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^\d{10}$/.test(val), {
+      message: "Phone number must be exactly 10 digits with no characters",
+    }),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["candidate", "recruiter"]),
 });
@@ -93,6 +98,7 @@ export default function AuthPage() {
   const onSignup = async (values) => {
     const sanitizedValues = {
       ...values,
+      phone: values.phone ? values.phone.replace(/\D/g, "").slice(0, 10) : "",
       role: values.role === "recruiter" ? "recruiter" : "candidate",
     };
 
@@ -111,8 +117,8 @@ export default function AuthPage() {
       setPendingSignup(sanitizedValues);
       setIsVerifyingOtp(true);
       toast.success(
-        res.data?.message || `Verification code sent! (Expires in 30s)`,
-        { duration: 6000, icon: "📧" }
+        res.data?.message || `Verification code sent! (Valid for 10 mins)`,
+        { duration: 6000 }
       );
     } catch (e) {
       const serverMsg = e.response?.data?.message;
@@ -129,9 +135,9 @@ export default function AuthPage() {
         setExpectedOtp(fallbackCode);
         setPendingSignup(sanitizedValues);
         setIsVerifyingOtp(true);
-        toast.success(`Verification code: ${fallbackCode} (Expires in 30s)`, {
+        toast.success(`Verification code: ${fallbackCode} (Valid for 10 mins)`, {
           duration: 9000,
-          icon: "🔐",
+          
         });
         return;
       }
@@ -157,6 +163,7 @@ export default function AuthPage() {
         name: pendingSignup.name?.trim(),
         email: pendingSignup.email?.trim().toLowerCase(),
         password: pendingSignup.password,
+        phone: pendingSignup.phone ? pendingSignup.phone.replace(/\D/g, "").slice(0, 10) : undefined,
         role: pendingSignup.role === "recruiter" ? "recruiter" : "candidate",
         otp: enteredOtp,
       };
@@ -200,16 +207,16 @@ export default function AuthPage() {
       const serverOtp = res.data?.code || fallbackCode;
       setExpectedOtp(serverOtp);
       toast.success(
-        res.data?.message || "Fresh verification code sent! (Expires in 30s)",
-        { duration: 6000, icon: "📧" }
+        res.data?.message || "Fresh verification code sent! (Valid for 10 mins)",
+        { duration: 6000 }
       );
     } catch (e) {
       // If remote backend route 404 or offline, gracefully supply fresh code
       if (e.response?.status === 404 || !e.response) {
         setExpectedOtp(fallbackCode);
-        toast.success(`Fresh verification code: ${fallbackCode} (Expires in 30s)`, {
+        toast.success(`Fresh verification code: ${fallbackCode} (Valid for 10 mins)`, {
           duration: 8000,
-          icon: "🔐",
+          
         });
         return;
       }
@@ -246,7 +253,7 @@ export default function AuthPage() {
         backText="Back to Registration"
         isPage={true}
         demoCode={expectedOtp}
-        timerSeconds={30}
+        timerSeconds={30} codeValiditySeconds={600}
       />
     );
   }
@@ -458,12 +465,31 @@ export default function AuthPage() {
                   <div className="relative">
                     <input
                       type="tel"
-                      placeholder="e.g. +91 98765 43210"
-                      {...registerSignup("phone")}
-                      className="w-full rounded-xl border-0 bg-[#dedee2] py-2 pl-3.5 pr-10 text-xs font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="10-digit mobile number (e.g. 9876543210)"
+                      {...registerSignup("phone", {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        },
+                      })}
+                      onKeyDown={(e) => {
+                        if (
+                          !/[0-9]/.test(e.key) &&
+                          !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="w-full rounded-xl border-0 bg-[#dedee2] py-2 pl-3.5 pr-10 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
                     />
                     <FiPhone className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                   </div>
+                  {signupErrors.phone && (
+                    <p className="mt-1 text-[11px] font-medium text-rose-500">
+                      {signupErrors.phone.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Password with Eye Toggle */}
@@ -724,7 +750,7 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  {/* Password */}
+                  {/* Password with Eye Toggle */}
                   <div>
                     <label className="mb-1 block text-xs font-bold text-slate-700">
                       Password <span className="text-rose-500">*</span>
@@ -734,7 +760,7 @@ export default function AuthPage() {
                         type={showLoginPassword ? "text" : "password"}
                         placeholder="••••••••"
                         {...registerLogin("password")}
-                        className="w-full rounded-xl border-0 bg-[#dedee2] py-2.5 pl-3.5 pr-10 text-xs font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
+                        className="w-full rounded-xl border-0 bg-[#dedee2] py-2.5 pl-3.5 pr-10 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
                       />
                       <button
                         type="button"
@@ -871,12 +897,31 @@ export default function AuthPage() {
                     <div className="relative">
                       <input
                         type="tel"
-                        placeholder="e.g. +91 98765 43210"
-                        {...registerSignup("phone")}
+                        inputMode="numeric"
+                        maxLength={10}
+                        placeholder="10-digit mobile number (e.g. 9876543210)"
+                        {...registerSignup("phone", {
+                          onChange: (e) => {
+                            e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          },
+                        })}
+                        onKeyDown={(e) => {
+                          if (
+                            !/[0-9]/.test(e.key) &&
+                            !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                          ) {
+                            e.preventDefault();
+                          }
+                        }}
                         className="w-full rounded-xl border-0 bg-[#dedee2] py-2 pl-3.5 pr-10 text-xs font-medium text-slate-900 placeholder:text-slate-500 outline-none transition focus:ring-2 focus:ring-[#7b52b9]"
                       />
                       <FiPhone className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                     </div>
+                    {signupErrors.phone && (
+                      <p className="mt-0.5 text-[11px] font-medium text-rose-500">
+                        {signupErrors.phone.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* Password */}

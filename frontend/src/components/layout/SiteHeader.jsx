@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { FiMenu, FiMoon, FiSun, FiX } from "react-icons/fi";
+import { FiMenu, FiMoon, FiSun, FiX, FiShield } from "react-icons/fi";
+import { FaCrown, FaShieldAlt } from "react-icons/fa";
 import { IconButton, Tooltip } from "@mui/material";
 import { useApp } from "../../context/AppContext";
 import LogoMark from "../common/LogoMark";
@@ -19,6 +20,11 @@ export default function SiteHeader() {
   const user = useSelector((s) => s.auth.user);
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const userRole = String(user?.role || "").toUpperCase();
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isAdmin = userRole === "ADMIN";
+  const hasAdminAccess = isSuperAdmin || isAdmin;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -57,6 +63,23 @@ export default function SiteHeader() {
                 Messages
               </NavLink>
             </>
+          )}
+          {hasAdminAccess && (
+            <NavLink
+              to="/super-admin/dashboard"
+              className={({ isActive }) =>
+                `inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+                  isActive
+                    ? "bg-amber-500 text-slate-950 shadow-md"
+                    : isSuperAdmin
+                    ? "bg-amber-400/15 text-amber-500 border border-amber-400/40 hover:bg-amber-400/25"
+                    : "bg-purple-500/15 text-purple-400 border border-purple-500/40 hover:bg-purple-500/25"
+                }`
+              }
+            >
+              {isSuperAdmin ? <FaCrown className="text-sm text-amber-500" /> : <FaShieldAlt className="text-sm text-purple-400" />}
+              <span>{isSuperAdmin ? "Super Admin" : "Admin Portal"}</span>
+            </NavLink>
           )}
         </nav>
         <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
@@ -132,8 +155,19 @@ export default function SiteHeader() {
                   <NavLink className={navClass} to="/dashboard">
                     Dashboard
                   </NavLink>
+                  {hasAdminAccess && (
+                    <NavLink
+                      className="rounded-lg bg-amber-400/15 border border-amber-400/30 px-3 py-2 text-amber-400 font-bold"
+                      to="/super-admin/dashboard"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        {isSuperAdmin ? <FaCrown className="text-amber-400" /> : <FaShieldAlt className="text-purple-400" />}
+                        <span>{isSuperAdmin ? "Super Admin Portal" : "Admin Portal"}</span>
+                      </span>
+                    </NavLink>
+                  )}
                   <NavLink className={navClass} to="/applications">
-                    {user?.role === "recruiter" ? "Applicants" : "Applications"}
+                    {userRole === "RECRUITER" ? "Applicants" : "Applications"}
                   </NavLink>
                   <NavLink className={navClass} to="/messages">
                     Messages
@@ -144,7 +178,7 @@ export default function SiteHeader() {
                   <NavLink className={navClass} to="/settings">
                     Settings
                   </NavLink>
-                  {user?.role === "recruiter" && (
+                  {userRole === "RECRUITER" && (
                     <>
                       <NavLink className={navClass} to="/manage-jobs">
                         Manage jobs

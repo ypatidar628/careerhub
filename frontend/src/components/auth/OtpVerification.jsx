@@ -14,18 +14,21 @@ export default function OtpVerification({
   subtitle = "Enter the 6-digit verification code sent to your email.",
   isPage = false,
   demoCode,
-  timerSeconds = 30,
+  timerSeconds = 30, // Resend cooldown seconds
+  codeValiditySeconds = 600, // Total OTP valid lifetime (10 minutes)
 }) {
   const [otp, setOtp] = useState(new Array(length).fill(""));
-  const [timer, setTimer] = useState(timerSeconds);
+  const [resendCooldown, setResendCooldown] = useState(timerSeconds);
+  const [validityCountdown, setValidityCountdown] = useState(codeValiditySeconds);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const inputRefs = useRef([]);
 
-  // Reset timer whenever timerSeconds or demoCode changes (fresh OTP arrival)
+  // Reset timers whenever demoCode changes or component mounts
   useEffect(() => {
-    setTimer(timerSeconds);
-  }, [timerSeconds, demoCode]);
+    setResendCooldown(timerSeconds);
+    setValidityCountdown(codeValiditySeconds);
+  }, [timerSeconds, codeValiditySeconds, demoCode]);
 
   // Responsive breakpoint tracking matching AuthPage
   const [isDesktop, setIsDesktop] = useState(() =>
@@ -40,12 +43,21 @@ export default function OtpVerification({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Resend cooldown ticker
   useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    if (resendCooldown > 0) {
+      const interval = setInterval(() => setResendCooldown((prev) => prev - 1), 1000);
       return () => clearInterval(interval);
     }
-  }, [timer]);
+  }, [resendCooldown]);
+
+  // 10-minute code validity ticker
+  useEffect(() => {
+    if (validityCountdown > 0) {
+      const interval = setInterval(() => setValidityCountdown((prev) => prev - 1), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [validityCountdown]);
 
   const handleChange = (index, value) => {
     const digits = value.replace(/\D/g, "");
@@ -82,6 +94,8 @@ export default function OtpVerification({
     }
   };
 
+  const isExpired = validityCountdown <= 0;
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     const otpCode = otp.join("");
@@ -90,7 +104,7 @@ export default function OtpVerification({
       return;
     }
 
-    if (timer === 0) {
+    if (isExpired) {
       toast.error("Verification code expired! Please click 'Resend OTP Code'.");
       return;
     }
@@ -110,7 +124,7 @@ export default function OtpVerification({
   };
 
   const handleResendOtp = async () => {
-    if (timer > 0 || resending) return;
+    if (resendCooldown > 0 || resending) return;
     setResending(true);
     setOtp(new Array(length).fill(""));
     if (inputRefs.current[0]) inputRefs.current[0].focus();
@@ -121,12 +135,19 @@ export default function OtpVerification({
       } else {
         toast.success("A fresh OTP code has been sent to your email.");
       }
-      setTimer(timerSeconds);
+      setResendCooldown(timerSeconds);
+      setValidityCountdown(codeValiditySeconds);
     } catch (err) {
       toast.error(err.message || "Failed to resend verification code.");
     } finally {
       setResending(false);
     }
+  };
+
+  const formatValidityTime = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const rem = secs % 60;
+    return `${mins}:${rem < 10 ? "0" : ""}${rem}`;
   };
 
   const formContent = (
@@ -189,15 +210,15 @@ export default function OtpVerification({
               <label className="block text-xs font-bold text-slate-700">
                 Verification Code <span className="text-rose-500">*</span>
               </label>
-              {timer > 0 ? (
+              {!isExpired ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
                   <FiClock className="text-xs" />
-                  <span>Expires in {timer}s</span>
+                  <span>Valid for {formatValidityTime(validityCountdown)}</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500">
                   <FiClock className="text-xs" />
-                  <span>Expired (30s)</span>
+                  <span>Code Expired</span>
                 </span>
               )}
             </div>
@@ -210,13 +231,13 @@ export default function OtpVerification({
                   inputMode="numeric"
                   maxLength={1}
                   value={digit}
-                  disabled={timer === 0}
+                  disabled={isExpired}
                   onChange={(e) => handleChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(idx, e)}
                   onPaste={handlePaste}
                   autoFocus={idx === 0}
                   className={`h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-0 text-center text-xl sm:text-2xl font-black shadow-xs outline-none transition ${
-                    timer === 0
+                    isExpired
                       ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                       : "bg-[#dedee2] text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#7b52b9]"
                   }`}
@@ -227,10 +248,10 @@ export default function OtpVerification({
 
           {/* Resend Countdown & Action */}
           <div className="flex items-center justify-between text-xs">
-            {timer > 0 ? (
+            {resendCooldown > 0 ? (
               <span className="text-slate-500 font-medium">
                 Resend code in{" "}
-                <span className="font-bold text-[#50357f]">{timer}s</span>
+                <span className="font-bold text-[#50357f]">{resendCooldown}s</span>
               </span>
             ) : (
               <button
@@ -253,12 +274,12 @@ export default function OtpVerification({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading || otp.join("").length < length || timer === 0}
+              disabled={loading || otp.join("").length < length || isExpired}
               className="w-full rounded-xl bg-[#50357f] py-3 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-[#604099] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               {loading
                 ? "Verifying code..."
-                : timer === 0
+                : isExpired
                 ? "Code Expired - Resend Code"
                 : "Verify Code"}
             </button>
@@ -320,7 +341,7 @@ export default function OtpVerification({
       {/* Bottom Hint */}
       <div className="z-10">
         <p className="text-[11px] font-medium tracking-wide text-slate-400">
-          Verification code expires in 30 seconds. Check your inbox or spam folder.
+          Verification code is valid for 10 minutes. Check your inbox or spam folder.
         </p>
       </div>
     </div>

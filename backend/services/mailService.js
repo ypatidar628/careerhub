@@ -162,7 +162,7 @@ const generateEmailHtml = (otpCode, purpose = "registration") => {
                     <!-- Expiration Alert Banner -->
                     <div style="margin-top: 20px; display: inline-block; background-color: #fff1f2; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 20px;">
                       <span style="color: #e11d48; font-size: 12px; font-weight: 700; letter-spacing: 0.2px;">
-                        ⏱ Expires in 30 seconds
+                        Valid for 10 minutes
                       </span>
                     </div>
                   </td>
@@ -176,7 +176,7 @@ const generateEmailHtml = (otpCode, purpose = "registration") => {
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td width="24" valign="top" style="font-size: 16px; line-height: 1.3;">
-                          🔒
+                          
                         </td>
                         <td style="padding-left: 8px;">
                           <p style="color: #475569; font-size: 12px; line-height: 1.5; margin: 0;">
@@ -229,7 +229,7 @@ export const sendOtpEmail = async (toEmail, otpCode, purpose = "registration") =
     }
 
     const isReset = purpose === "reset";
-    const subject = `${otpCode} is your CareerHub verification code (Expires in 30s)`;
+    const subject = `${otpCode} is your CareerHub verification code (Valid for 10 mins)`;
     const htmlContent = generateEmailHtml(otpCode, purpose);
 
     if (transporter) {

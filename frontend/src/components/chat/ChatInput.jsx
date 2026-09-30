@@ -1,14 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  FiSend,
-  FiSmile,
   FiX,
   FiFile,
   FiCornerUpLeft,
 } from "react-icons/fi";
+import { FaPaperPlane } from "react-icons/fa";
 import FileUploader from "./FileUploader";
-
-const QUICK_EMOJIS = ["👍", "👋", "😊", "💼", "🎯", "🚀", "🙌", "🤝", "✅"];
 
 export default function ChatInput({
   onSendMessage,
@@ -20,21 +17,9 @@ export default function ChatInput({
 }) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [sending, setSending] = useState(false);
   const inputRef = useRef(null);
-  const emojiRef = useRef(null);
   const typingTimerRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (emojiRef.current && !emojiRef.current.contains(event.target)) {
-        setShowEmojiPicker(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     // Focus input on reply or change
@@ -59,12 +44,6 @@ export default function ChatInput({
 
   const removeAttachment = (index) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const addEmoji = (emoji) => {
-    setText((prev) => prev + emoji);
-    setShowEmojiPicker(false);
-    if (inputRef.current) inputRef.current.focus();
   };
 
   const handleKeyDown = (e) => {
@@ -161,34 +140,6 @@ export default function ChatInput({
           disabled={disabled || sending}
         />
 
-        {/* Emoji Selector */}
-        <div className="relative" ref={emojiRef}>
-          <button
-            type="button"
-            disabled={disabled || sending}
-            onClick={() => setShowEmojiPicker((prev) => !prev)}
-            aria-label="Add emoji"
-            className="rounded-xl p-2.5 text-slate-400 transition hover:bg-slate-100 hover:text-brand dark:hover:bg-slate-800 dark:hover:text-brand"
-          >
-            <FiSmile className="text-lg" />
-          </button>
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl backdrop-blur-md dark:border-slate-700 dark:bg-slate-800 z-30">
-              {QUICK_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => addEmoji(emoji)}
-                  className="rounded-lg p-1.5 text-base transition hover:scale-125 hover:bg-slate-100 dark:hover:bg-slate-700"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Message Input Box */}
         <div className="relative min-w-0 flex-1">
           <textarea
@@ -218,7 +169,7 @@ export default function ChatInput({
           {sending ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <FiSend className="text-base" />
+            <FaPaperPlane className="text-sm" />
           )}
         </button>
       </form>

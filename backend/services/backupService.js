@@ -164,9 +164,9 @@ export const autoRecoverAndBackup = async () => {
 
     // 1. AUTO-RESTORE: If database is completely empty/lost but we have backup snapshots available
     if (totalDocs === 0 && availableBackups.length > 0) {
-      console.log("⚠️ Database appears empty or lost. Initiating automatic recovery from latest backup...");
+      console.log("[WARNING] Database appears empty or lost. Initiating automatic recovery from latest backup...");
       await performRestore(path.join(backupRoot, availableBackups[0]));
-      console.log("✅ Auto-recovery completed successfully!");
+      console.log("[SUCCESS] Auto-recovery completed successfully!");
       return;
     }
 
