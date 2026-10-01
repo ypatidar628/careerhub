@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import {
   FiArrowRight,
-  FiCheckCircle,
   FiSearch,
   FiZap,
   FiBriefcase,
@@ -15,6 +14,7 @@ import SectionHeading from "../components/common/SectionHeading";
 import JobCard from "../components/jobs/JobCard";
 import Hero3DVisual from "../components/home/Hero3DVisual";
 import TiltCard3D from "../components/common/TiltCard3D";
+import AboutUsSection from "../components/home/AboutUsSection";
 import client from "../api/client";
 
 export default function HomePage() {
@@ -163,6 +163,9 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* About Us Section */}
+      <AboutUsSection />
 
       {/* Why CareerHub with 3D Tilt Feature Cards */}
       <section className="w-full bg-ink px-4 py-12 text-white sm:px-6 sm:py-20 lg:px-8">

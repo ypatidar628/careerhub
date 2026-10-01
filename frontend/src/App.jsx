@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import SiteHeader from "./components/layout/SiteHeader";
 import SiteFooter from "./components/layout/SiteFooter";
 import HomePage from "./pages/HomePage";
+import AboutPage from "./pages/AboutPage";
 import AuthPage from "./pages/AuthPage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailsPage from "./pages/JobDetailsPage";
@@ -31,6 +33,20 @@ import SuperAdminApplicationsPage from "./pages/super-admin/SuperAdminApplicatio
 
 function Layout() {
   const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace("#", "");
+      // slight delay to allow smooth dom rendering if page transition happened
+      const timer = setTimeout(() => {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, location.hash]);
 
   return (
     <div className="flex min-h-screen min-w-0 flex-col overflow-x-hidden bg-slate-50/50 text-slate-800 transition-colors duration-200 dark:bg-slate-900 dark:text-slate-100">
@@ -67,6 +83,7 @@ export default function App() {
       {/* Main CareerHub Web App */}
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

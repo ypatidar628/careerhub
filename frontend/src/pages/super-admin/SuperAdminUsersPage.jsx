@@ -5,9 +5,7 @@ import {
   FaShieldAlt,
   FaBriefcase,
   FaGraduationCap,
-  FaUsers,
   FaSearch,
-  FaFilter,
   FaPlus,
   FaEye,
   FaEdit,
@@ -38,10 +36,10 @@ import { exportToCsv } from "../../utils/exportCsv";
 import toast from "react-hot-toast";
 
 const ROLE_BADGE = {
-  SUPER_ADMIN: "bg-amber-400/15 text-amber-300 border-amber-400/30",
-  ADMIN: "bg-purple-400/15 text-purple-300 border-purple-400/30",
-  RECRUITER: "bg-indigo-400/15 text-indigo-300 border-indigo-400/30",
-  CANDIDATE: "bg-sky-400/15 text-sky-300 border-sky-400/30",
+  SUPER_ADMIN: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-400/15 dark:text-amber-300 dark:border-amber-400/30",
+  ADMIN: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-400/15 dark:text-purple-300 dark:border-purple-400/30",
+  RECRUITER: "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-400/15 dark:text-indigo-300 dark:border-indigo-400/30",
+  CANDIDATE: "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-400/15 dark:text-sky-300 dark:border-sky-400/30",
 };
 
 export default function SuperAdminUsersPage() {
@@ -61,20 +59,19 @@ export default function SuperAdminUsersPage() {
 
   // Sorting
   const [sortField, setSortField] = useState("createdAt");
-  const [sortDirection, setSortDirection] = useState("desc"); // 'asc' | 'desc'
+  const [sortDirection, setSortDirection] = useState("desc");
 
-  // Batch selection
+  // Selection
   const [selectedIds, setSelectedIds] = useState([]);
   const [batchLoading, setBatchLoading] = useState(false);
 
   // Modals
-  const [viewUser, setViewUser] = useState(null);
-  const [viewLoading, setViewLoading] = useState(false);
-  const [editUser, setEditUser] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [viewUser, setViewUser] = useState(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
 
-  // Form States
+  // Form states
   const [createForm, setCreateForm] = useState({
     name: "",
     email: "",
@@ -89,17 +86,17 @@ export default function SuperAdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await getAllUsers({
-        search,
-        role: roleFilter,
-        status: statusFilter,
+      const params = {
         page,
-        limit: 20,
-      });
+        limit: 15,
+        search: search || undefined,
+        role: roleFilter !== "ALL" ? roleFilter : undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+      };
+      const data = await getAllUsers(params);
       setUsers(data.users || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
-      setSelectedIds([]); // Clear selection upon refetch
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load users");
     } finally {
@@ -109,32 +106,19 @@ export default function SuperAdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [search, roleFilter, statusFilter, page]);
+  }, [page, roleFilter, statusFilter]);
 
-  // Client-side sorting on loaded page
-  const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      fetchUsers();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-      if (sortField === "name" || sortField === "email" || sortField === "role") {
-        valA = String(valA || "").toLowerCase();
-        valB = String(valB || "").toLowerCase();
-      } else if (sortField === "createdAt") {
-        valA = new Date(valA || 0).getTime();
-        valB = new Date(valB || 0).getTime();
-      } else if (sortField === "status") {
-        valA = a.isActive !== false ? 1 : 0;
-        valB = b.isActive !== false ? 1 : 0;
-      }
-
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [users, sortField, sortDirection]);
-
-  const toggleSort = (field) => {
+  // Sorting logic
+  const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
@@ -143,57 +127,55 @@ export default function SuperAdminUsersPage() {
     }
   };
 
-  const renderSortIcon = (field) => {
-    if (sortField !== field) {
-      return <FaSort className="text-slate-600 group-hover:text-slate-400 text-[10px]" />;
-    }
-    return sortDirection === "asc" ? (
-      <FaSortUp className="text-brand text-xs" />
-    ) : (
-      <FaSortDown className="text-brand text-xs" />
-    );
-  };
+  const sortedUsers = useMemo(() => {
+    const list = [...users];
+    list.sort((a, b) => {
+      let valA = a[sortField];
+      let valB = b[sortField];
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [users, sortField, sortDirection]);
 
-  // Selection handlers
-  const handleSelectAll = () => {
-    if (selectedIds.length === sortedUsers.length) {
+  // Batch Selection
+  const allSelected =
+    users.length > 0 && selectedIds.length === users.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(sortedUsers.map((u) => u.id));
+      setSelectedIds(users.map((u) => u.id));
     }
   };
 
-  const handleToggleSelectOne = (id) => {
+  const toggleSelectRow = (id) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  // Batch status toggle
-  const handleBatchStatus = async (targetActiveState) => {
+  // Batch Status Toggle
+  const handleBatchStatus = async (activate) => {
     if (!selectedIds.length) return;
-    const targetUsers = users.filter((u) => selectedIds.includes(u.id));
-    const nonSuperAdmins = targetUsers.filter((u) => u.role !== "SUPER_ADMIN");
-
-    if (nonSuperAdmins.length === 0) {
-      toast.error("Super Admin status cannot be altered.");
-      return;
-    }
-
     try {
       setBatchLoading(true);
-      // Run sequential toggles for selected users
-      let count = 0;
-      for (const u of nonSuperAdmins) {
-        if ((u.isActive !== false) !== targetActiveState) {
-          await toggleUserStatus(u.id);
-          count++;
+      // Toggle for each selected user
+      for (const id of selectedIds) {
+        const target = users.find((u) => u.id === id);
+        if (target && target.isActive !== activate) {
+          await toggleUserStatus(id);
         }
       }
-      toast.success(`Updated status for ${count} users.`);
+      toast.success(`Batch ${activate ? "activation" : "deactivation"} complete.`);
+      setSelectedIds([]);
       fetchUsers();
-    } catch {
-      toast.error("Failed to complete batch update.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Batch status update failed");
     } finally {
       setBatchLoading(false);
     }
@@ -202,51 +184,45 @@ export default function SuperAdminUsersPage() {
   // CSV Export
   const handleExportCsv = () => {
     try {
-      const dataToExport = selectedIds.length
+      const exportList = selectedIds.length
         ? users.filter((u) => selectedIds.includes(u.id))
-        : sortedUsers;
+        : users;
 
       const columns = [
-        { label: "User ID", key: "id" },
-        { label: "Name", key: "name" },
-        { label: "Email", key: "email" },
-        { label: "Role", key: "role" },
+        { label: "ID", accessor: (row) => row.id },
+        { label: "Name", accessor: (row) => row.name },
+        { label: "Email", accessor: (row) => row.email },
+        { label: "Role", accessor: (row) => row.role },
+        { label: "Status", accessor: (row) => (row.isActive ? "ACTIVE" : "INACTIVE") },
         { label: "Phone", accessor: (row) => row.phone || "" },
         {
-          label: "Status",
-          accessor: (row) => (row.isActive !== false ? "Active" : "Deactivated"),
-        },
-        {
-          label: "Created Date",
+          label: "Created At",
           accessor: (row) => (row.createdAt ? new Date(row.createdAt).toISOString() : ""),
         },
       ];
-
-      exportToCsv("careerhub-users-export.csv", dataToExport, columns);
-      toast.success(`Exported ${dataToExport.length} users to CSV`);
+      exportToCsv("careerhub-users-export.csv", exportList, columns);
+      toast.success(`Exported ${exportList.length} users to CSV`);
     } catch (e) {
-      toast.error(e.message || "Failed to export users");
+      toast.error(e.message || "Failed to export CSV");
     }
   };
 
-  const handleOpenView = async (userId) => {
+  // Inspections
+  const handleOpenView = async (id) => {
     try {
-      setViewLoading(true);
-      const data = await getUserById(userId);
+      const data = await getUserById(id);
       setViewUser(data);
-    } catch {
-      toast.error("Failed to load user details.");
-    } finally {
-      setViewLoading(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to fetch user profile");
     }
   };
 
+  // Single User Actions
   const handleToggleStatus = async (user) => {
     if (user.role === "SUPER_ADMIN") {
-      toast.error("Security Rule: The Super Admin cannot be deactivated.");
+      toast.error("Security Rule: The Super Admin account cannot be deactivated.");
       return;
     }
-
     try {
       const data = await toggleUserStatus(user.id);
       toast.success(data.message || "User status updated.");
@@ -338,72 +314,74 @@ export default function SuperAdminUsersPage() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-            User Management Directory
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-400">
-            Enterprise administration, full profile inspections, batch activation, and CSV exports.
-          </p>
-        </div>
+      <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              User Management Directory
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Enterprise administration, full profile inspections, batch activation, and CSV exports.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/90 px-4 py-2.5 text-xs font-bold text-slate-200 shadow-sm transition hover:bg-slate-800 hover:text-white"
-          >
-            <FaFileDownload className="text-xs text-cyan-400" />
-            <span>
-              {selectedIds.length ? `Export Selected (${selectedIds.length})` : "Export CSV"}
-            </span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              <FaFileDownload className="text-xs text-slate-500 dark:text-slate-400" />
+              <span>
+                {selectedIds.length ? `Export Selected (${selectedIds.length})` : "Export CSV"}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand to-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand/25 transition hover:brightness-110 active:scale-95"
-          >
-            <FaPlus className="text-xs" />
-            <span>Add New User</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-600"
+            >
+              <FaPlus className="text-xs" />
+              <span>Add New User</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mini KPI Ribbon */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-3.5 backdrop-blur-xl">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Total In View
           </div>
-          <div className="mt-1 text-xl font-black text-white">{users.length}</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{users.length}</div>
         </div>
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 backdrop-blur-xl">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-xs dark:border-emerald-800/40 dark:bg-emerald-950/20">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
             Active Status
           </div>
-          <div className="mt-1 text-xl font-black text-emerald-400">{activeCount}</div>
+          <div className="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-400">{activeCount}</div>
         </div>
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-3.5 backdrop-blur-xl">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400">
+        <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-4 shadow-xs dark:border-rose-800/40 dark:bg-rose-950/20">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">
             Deactivated
           </div>
-          <div className="mt-1 text-xl font-black text-rose-400">{inactiveCount}</div>
+          <div className="mt-1 text-2xl font-bold text-rose-700 dark:text-rose-400">{inactiveCount}</div>
         </div>
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 backdrop-blur-xl">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 shadow-xs dark:border-amber-800/40 dark:bg-amber-950/20">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
             Super Admin
           </div>
-          <div className="mt-1 text-xl font-black text-amber-300">1 (Guarded)</div>
+          <div className="mt-1 text-2xl font-bold text-amber-800 dark:text-amber-300">1 (Guarded)</div>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4 backdrop-blur-xl md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs md:grid-cols-4 dark:border-slate-800 dark:bg-slate-900">
         {/* Search Input */}
         <div className="relative md:col-span-2">
-          <FaSearch className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-500 text-xs" />
+          <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400 text-xs" />
           <input
             type="text"
             placeholder="Search by name, email, or phone number..."
@@ -412,7 +390,7 @@ export default function SuperAdminUsersPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2.5 pr-4 pl-10 text-xs text-white placeholder-slate-500 focus:border-brand focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-3 pl-8 text-xs text-slate-800 placeholder-slate-400 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
           />
         </div>
 
@@ -424,7 +402,7 @@ export default function SuperAdminUsersPage() {
               setRoleFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2.5 text-xs text-slate-200 focus:border-brand focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             <option value="ALL">All Roles</option>
             <option value="SUPER_ADMIN">Super Admin</option>
@@ -442,7 +420,7 @@ export default function SuperAdminUsersPage() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2.5 text-xs text-slate-200 focus:border-brand focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active Accounts</option>
@@ -453,9 +431,9 @@ export default function SuperAdminUsersPage() {
 
       {/* Batch Operations Toolbar (when items selected) */}
       {selectedIds.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand/40 bg-brand/10 p-3.5 backdrop-blur-xl">
-          <div className="flex items-center gap-2 text-xs font-bold text-white">
-            <span className="rounded-lg bg-brand px-2 py-0.5 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3 dark:border-brand/40 dark:bg-brand/10">
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-white">
+            <span className="rounded bg-brand px-2 py-0.5 text-white">
               {selectedIds.length}
             </span>
             <span>selected accounts</span>
@@ -466,7 +444,7 @@ export default function SuperAdminUsersPage() {
               type="button"
               disabled={batchLoading}
               onClick={() => handleBatchStatus(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition disabled:opacity-50 dark:border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30"
             >
               <FaCheck className="text-[10px]" />
               <span>Bulk Activate</span>
@@ -475,7 +453,7 @@ export default function SuperAdminUsersPage() {
               type="button"
               disabled={batchLoading}
               onClick={() => handleBatchStatus(false)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/20 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/30 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition disabled:opacity-50 dark:border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/30"
             >
               <FaBan className="text-[10px]" />
               <span>Bulk Deactivate</span>
@@ -483,7 +461,7 @@ export default function SuperAdminUsersPage() {
             <button
               type="button"
               onClick={() => setSelectedIds([])}
-              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
             >
               Clear
             </button>
@@ -492,188 +470,182 @@ export default function SuperAdminUsersPage() {
       )}
 
       {/* User Management Table */}
-      <div className="overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/70 backdrop-blur-xl shadow-xl">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-400">
               <tr>
                 {/* Select All Checkbox */}
-                <th className="w-12 px-4 py-4 text-center">
+                <th className="px-5 py-3 w-10">
                   <button
                     type="button"
-                    onClick={handleSelectAll}
-                    className="text-slate-400 hover:text-white transition"
-                    title={selectedIds.length === sortedUsers.length ? "Deselect all" : "Select all"}
+                    onClick={toggleSelectAll}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
                   >
-                    {selectedIds.length > 0 && selectedIds.length === sortedUsers.length ? (
-                      <FaCheckSquare className="text-brand text-base" />
+                    {allSelected ? (
+                      <FaCheckSquare className="text-brand text-sm" />
                     ) : (
-                      <FaSquare className="text-slate-700 text-base" />
+                      <FaSquare className="text-slate-300 dark:text-slate-700 text-sm" />
                     )}
                   </button>
                 </th>
 
-                {/* Sortable: Name */}
+                {/* Name / User Info */}
                 <th
-                  onClick={() => toggleSort("name")}
-                  className="cursor-pointer px-6 py-4 transition hover:text-white group select-none"
+                  onClick={() => handleSort("name")}
+                  className="cursor-pointer px-5 py-3 transition hover:text-slate-800 dark:hover:text-white"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>Name & Profile</span>
-                    {renderSortIcon("name")}
+                    <span>User Details</span>
+                    {sortField === "name" ? (
+                      sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />
+                    ) : (
+                      <FaSort className="text-slate-300 dark:text-slate-700" />
+                    )}
                   </div>
                 </th>
 
-                {/* Sortable: Email */}
+                {/* Role */}
                 <th
-                  onClick={() => toggleSort("email")}
-                  className="cursor-pointer px-6 py-4 transition hover:text-white group select-none"
+                  onClick={() => handleSort("role")}
+                  className="cursor-pointer px-5 py-3 transition hover:text-slate-800 dark:hover:text-white"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>Email Address</span>
-                    {renderSortIcon("email")}
+                    <span>Account Role</span>
+                    {sortField === "role" ? (
+                      sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />
+                    ) : (
+                      <FaSort className="text-slate-300 dark:text-slate-700" />
+                    )}
                   </div>
                 </th>
 
-                {/* Sortable: Role */}
+                {/* Status */}
                 <th
-                  onClick={() => toggleSort("role")}
-                  className="cursor-pointer px-6 py-4 transition hover:text-white group select-none"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Role</span>
-                    {renderSortIcon("role")}
-                  </div>
-                </th>
-
-                {/* Sortable: Status */}
-                <th
-                  onClick={() => toggleSort("status")}
-                  className="cursor-pointer px-6 py-4 transition hover:text-white group select-none"
+                  onClick={() => handleSort("isActive")}
+                  className="cursor-pointer px-5 py-3 transition hover:text-slate-800 dark:hover:text-white"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Status</span>
-                    {renderSortIcon("status")}
+                    {sortField === "isActive" ? (
+                      sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />
+                    ) : (
+                      <FaSort className="text-slate-300 dark:text-slate-700" />
+                    )}
                   </div>
                 </th>
 
-                {/* Sortable: Created Date */}
+                {/* Created Date */}
                 <th
-                  onClick={() => toggleSort("createdAt")}
-                  className="cursor-pointer px-6 py-4 transition hover:text-white group select-none"
+                  onClick={() => handleSort("createdAt")}
+                  className="cursor-pointer px-5 py-3 transition hover:text-slate-800 dark:hover:text-white"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>Created Date</span>
-                    {renderSortIcon("createdAt")}
+                    <span>Joined Date</span>
+                    {sortField === "createdAt" ? (
+                      sortDirection === "asc" ? <FaSortUp /> : <FaSortDown />
+                    ) : (
+                      <FaSort className="text-slate-300 dark:text-slate-700" />
+                    )}
                   </div>
                 </th>
 
-                <th className="px-6 py-4 text-right">Actions</th>
+                {/* Actions */}
+                <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
+
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-                    <div className="mt-2 text-xs">Loading user registry...</div>
+                    <div className="mt-2 text-xs">Querying enterprise accounts...</div>
                   </td>
                 </tr>
               ) : sortedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
-                    No accounts found matching search filters.
+                  <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                    No users match your current filter parameters.
                   </td>
                 </tr>
               ) : (
                 sortedUsers.map((user) => {
-                  const roleStr = String(user.role || "").toUpperCase();
-                  const isUserSuperAdmin = roleStr === "SUPER_ADMIN";
-                  const isActive = user.isActive !== false;
                   const isSelected = selectedIds.includes(user.id);
+                  const isUserSuperAdmin = user.role === "SUPER_ADMIN";
+                  const roleStr = String(user.role || "").toUpperCase();
+                  const isActive = user.isActive !== false;
 
                   return (
                     <tr
                       key={user.id}
-                      className={`transition-colors duration-150 hover:bg-slate-900/50 ${
-                        isSelected ? "bg-brand/5" : ""
-                      } ${isUserSuperAdmin ? "bg-amber-500/5 font-medium" : ""}`}
+                      className={`hover:bg-slate-50/80 transition dark:hover:bg-slate-800/40 ${
+                        isSelected ? "bg-indigo-50/50 dark:bg-brand/5" : ""
+                      }`}
                     >
                       {/* Checkbox */}
-                      <td className="px-4 py-4 text-center">
+                      <td className="px-5 py-3.5">
                         <button
                           type="button"
-                          onClick={() => handleToggleSelectOne(user.id)}
-                          className="text-slate-400 hover:text-white"
+                          onClick={() => toggleSelectRow(user.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
                         >
                           {isSelected ? (
                             <FaCheckSquare className="text-brand text-sm" />
                           ) : (
-                            <FaSquare className="text-slate-700 text-sm" />
+                            <FaSquare className="text-slate-300 dark:text-slate-700 text-sm" />
                           )}
                         </button>
                       </td>
 
-                      {/* Name & Avatar */}
-                      <td className="px-6 py-4">
+                      {/* Name & Contact */}
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-xs font-bold ${
+                            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg font-bold text-xs ${
                               isUserSuperAdmin
-                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                : roleStr === "ADMIN"
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                : roleStr === "RECRUITER"
-                                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                                : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
+                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             }`}
                           >
                             {user.name?.charAt(0)?.toUpperCase() || "U"}
                           </div>
-                          <div>
-                            <div className="font-bold text-white flex items-center gap-1.5">
-                              <span>{user.name}</span>
-                              {isUserSuperAdmin && (
-                                <FaCrown className="text-amber-400 text-xs shrink-0" title="Super Admin Account" />
-                              )}
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 truncate dark:text-white">
+                              {user.name}
                             </div>
-                            <div className="text-[11px] text-slate-400">
-                              {user.phone || "No phone registered"}
+                            <div className="text-[11px] text-slate-500 truncate dark:text-slate-400">
+                              {user.email}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Email */}
-                      <td className="px-6 py-4 text-slate-300 font-mono text-[11px]">
-                        {user.email}
-                      </td>
-
                       {/* Role Badge */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            ROLE_BADGE[roleStr] || "bg-slate-800 text-slate-300 border-slate-700"
+                          className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                            ROLE_BADGE[roleStr] || "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                           }`}
                         >
                           {isUserSuperAdmin ? (
                             <>
-                              <FaCrown className="text-amber-400 text-[10px]" />
+                              <FaCrown className="text-amber-500 text-[10px]" />
                               <span>Super Admin</span>
                             </>
                           ) : roleStr === "ADMIN" ? (
                             <>
-                              <FaShieldAlt className="text-purple-400 text-[10px]" />
+                              <FaShieldAlt className="text-purple-600 dark:text-purple-400 text-[10px]" />
                               <span>Admin</span>
                             </>
                           ) : roleStr === "RECRUITER" ? (
                             <>
-                              <FaBriefcase className="text-indigo-400 text-[10px]" />
+                              <FaBriefcase className="text-indigo-600 dark:text-indigo-400 text-[10px]" />
                               <span>Recruiter</span>
                             </>
                           ) : (
                             <>
-                              <FaGraduationCap className="text-sky-400 text-[10px]" />
+                              <FaGraduationCap className="text-sky-600 dark:text-sky-400 text-[10px]" />
                               <span>Candidate</span>
                             </>
                           )}
@@ -681,17 +653,17 @@ export default function SuperAdminUsersPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                             isActive
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                              : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
                           }`}
                         >
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${
-                              isActive ? "bg-emerald-400" : "bg-rose-400"
+                              isActive ? "bg-emerald-500" : "bg-rose-500"
                             }`}
                           />
                           {isActive ? "Active" : "Deactivated"}
@@ -699,21 +671,21 @@ export default function SuperAdminUsersPage() {
                       </td>
 
                       {/* Created Date */}
-                      <td className="px-6 py-4 text-slate-400 whitespace-nowrap font-mono text-[11px]">
+                      <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap text-[11px] dark:text-slate-400">
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           {/* View Modal Trigger */}
                           <button
                             type="button"
                             title="View Complete Profile"
                             onClick={() => handleOpenView(user.id)}
-                            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
                           >
-                            <FaEye className="text-sm" />
+                            <FaEye className="text-xs" />
                           </button>
 
                           {/* Edit Details */}
@@ -721,15 +693,15 @@ export default function SuperAdminUsersPage() {
                             type="button"
                             title="Edit User Details"
                             onClick={() => setEditUser(user)}
-                            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-brand transition"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-brand dark:hover:bg-slate-800 dark:hover:text-brand transition"
                           >
-                            <FaEdit className="text-sm" />
+                            <FaEdit className="text-xs" />
                           </button>
 
                           {/* Activate / Deactivate Toggle */}
                           {isUserSuperAdmin ? (
                             <span
-                              className="rounded-lg p-2 text-slate-600 cursor-not-allowed"
+                              className="rounded-lg p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
                               title="Super Admin cannot be deactivated"
                             >
                               <FaLock className="text-xs" />
@@ -739,32 +711,25 @@ export default function SuperAdminUsersPage() {
                               type="button"
                               title={isActive ? "Deactivate User" : "Activate User"}
                               onClick={() => handleToggleStatus(user)}
-                              className={`rounded-lg p-2 transition ${
+                              className={`rounded-lg p-1.5 transition ${
                                 isActive
-                                  ? "text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
-                                  : "text-emerald-400 hover:bg-emerald-500/10"
+                                  ? "text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                                  : "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                               }`}
                             >
-                              {isActive ? <FaTimesCircle className="text-sm" /> : <FaCheckCircle className="text-sm" />}
+                              {isActive ? <FaTimesCircle className="text-xs" /> : <FaCheckCircle className="text-xs" />}
                             </button>
                           )}
 
-                          {/* Delete User */}
-                          {isUserSuperAdmin ? (
-                            <span
-                              className="rounded-lg p-2 text-slate-600 cursor-not-allowed"
-                              title="Super Admin cannot be deleted"
-                            >
-                              <FaLock className="text-xs" />
-                            </span>
-                          ) : (
+                          {/* Delete */}
+                          {isUserSuperAdmin ? null : (
                             <button
                               type="button"
-                              title="Delete User Permanently"
+                              title="Delete Account"
                               onClick={() => setDeleteConfirmUser(user)}
-                              className="rounded-lg p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition"
+                              className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 transition"
                             >
-                              <FaTrashAlt className="text-sm" />
+                              <FaTrashAlt className="text-xs" />
                             </button>
                           )}
                         </div>
@@ -778,28 +743,28 @@ export default function SuperAdminUsersPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800/80 px-6 py-4 text-xs text-slate-400">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-5 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
           <div>
-            Showing <span className="font-semibold text-white">{sortedUsers.length}</span> of{" "}
-            <span className="font-semibold text-white">{total}</span> total accounts
+            Showing <span className="font-semibold text-slate-800 dark:text-white">{sortedUsers.length}</span> of{" "}
+            <span className="font-semibold text-slate-800 dark:text-white">{total}</span> total accounts
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-1.5 font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Previous
             </button>
-            <span className="px-2 font-semibold text-slate-400">
+            <span className="px-2 font-medium text-slate-500 dark:text-slate-400">
               Page {page} of {totalPages}
             </span>
             <button
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-1.5 font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Next
             </button>
@@ -809,22 +774,22 @@ export default function SuperAdminUsersPage() {
 
       {/* CREATE USER MODAL */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-white">Create New Account</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Create New Account</h3>
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(false)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
               >
-                <FaTimes className="text-base" />
+                <FaTimes className="text-sm" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Full Name *
                 </label>
                 <input
@@ -833,12 +798,12 @@ export default function SuperAdminUsersPage() {
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                   placeholder="e.g. Maya Patel"
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Email Address *
                 </label>
                 <input
@@ -847,12 +812,12 @@ export default function SuperAdminUsersPage() {
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                   placeholder="user@careerhub.dev"
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Initial Password * (min 8 characters)
                 </label>
                 <input
@@ -862,31 +827,28 @@ export default function SuperAdminUsersPage() {
                   value={createForm.password}
                   onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                   placeholder="••••••••"
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Account Role *
                   </label>
                   <select
                     value={createForm.role}
                     onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     <option value="CANDIDATE">Candidate</option>
                     <option value="RECRUITER">Recruiter</option>
                     {isSuperAdmin && <option value="ADMIN">Admin</option>}
                   </select>
-                  <p className="mt-1 text-[10px] text-amber-400">
-                    Exactly ONE Super Admin allowed in system.
-                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Phone Number
                   </label>
                   <input
@@ -895,23 +857,23 @@ export default function SuperAdminUsersPage() {
                     value={createForm.phone}
                     onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                     placeholder="10 digits numeric"
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800"
+                  className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="rounded-xl bg-gradient-to-r from-brand to-purple-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-brand/20 hover:brightness-110 disabled:opacity-50"
+                  className="rounded-lg bg-brand px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-600 disabled:opacity-50"
                 >
                   {actionLoading ? "Creating..." : "Create User"}
                 </button>
@@ -923,50 +885,50 @@ export default function SuperAdminUsersPage() {
 
       {/* EDIT USER MODAL */}
       {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-white">Edit User: {editUser.name}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit User: {editUser.name}</h3>
               <button
                 type="button"
                 onClick={() => setEditUser(null)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
               >
-                <FaTimes className="text-base" />
+                <FaTimes className="text-sm" />
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleEditSubmit} className="mt-4 space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-300">Name</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Name</label>
                 <input
                   type="text"
                   required
                   value={editUser.name}
                   onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300">Email</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Email</label>
                 <input
                   type="email"
                   required
                   value={editUser.email}
                   onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300">Role</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Role</label>
                   <select
                     disabled={editUser.role === "SUPER_ADMIN"}
                     value={editUser.role}
                     onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:border-brand focus:outline-none disabled:opacity-50"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     {editUser.role === "SUPER_ADMIN" ? (
                       <option value="SUPER_ADMIN">Super Admin (Protected)</option>
@@ -981,28 +943,28 @@ export default function SuperAdminUsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300">Phone</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Phone</label>
                   <input
                     type="text"
                     value={editUser.phone || ""}
                     onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white focus:border-brand focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setEditUser(null)}
-                  className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800"
+                  className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="rounded-xl bg-gradient-to-r from-brand to-purple-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-brand/20 hover:brightness-110 disabled:opacity-50"
+                  className="rounded-lg bg-brand px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-600 disabled:opacity-50"
                 >
                   {actionLoading ? "Saving..." : "Save Changes"}
                 </button>
@@ -1014,46 +976,46 @@ export default function SuperAdminUsersPage() {
 
       {/* VIEW COMPLETE PROFILE MODAL */}
       {viewUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/20 text-brand font-black text-lg border border-brand/30">
+                <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand/10 text-brand font-bold text-base">
                   {viewUser.user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">{viewUser.user?.name}</h3>
-                  <p className="text-xs text-slate-400 font-mono">{viewUser.user?.email}</p>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{viewUser.user?.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{viewUser.user?.email}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setViewUser(null)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
               >
-                <FaTimes className="text-base" />
+                <FaTimes className="text-sm" />
               </button>
             </div>
 
             <div className="mt-4 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4 rounded-2xl bg-slate-900/60 p-4 border border-slate-800/80">
+              <div className="grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3.5 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/60">
                 <div>
-                  <span className="text-slate-400 font-medium">Account Role:</span>
-                  <div className="mt-1 font-bold text-white">{viewUser.user?.role}</div>
+                  <span className="text-slate-500 font-medium dark:text-slate-400">Account Role:</span>
+                  <div className="mt-0.5 font-bold text-slate-800 dark:text-white">{viewUser.user?.role}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium">Account Status:</span>
-                  <div className="mt-1 font-bold text-emerald-400">
+                  <span className="text-slate-500 font-medium dark:text-slate-400">Account Status:</span>
+                  <div className="mt-0.5 font-bold text-emerald-600 dark:text-emerald-400">
                     {viewUser.user?.isActive !== false ? "Active" : "Deactivated"}
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium">Phone:</span>
-                  <div className="mt-1 text-slate-200">{viewUser.user?.phone || "Not set"}</div>
+                  <span className="text-slate-500 font-medium dark:text-slate-400">Phone:</span>
+                  <div className="mt-0.5 text-slate-700 dark:text-slate-300">{viewUser.user?.phone || "Not set"}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-medium">Location:</span>
-                  <div className="mt-1 text-slate-200">
+                  <span className="text-slate-500 font-medium dark:text-slate-400">Location:</span>
+                  <div className="mt-0.5 text-slate-700 dark:text-slate-300">
                     {viewUser.user?.profile?.location || "Not set"}
                   </div>
                 </div>
@@ -1061,8 +1023,8 @@ export default function SuperAdminUsersPage() {
 
               {viewUser.user?.profile?.bio && (
                 <div>
-                  <span className="font-bold text-slate-300">Biography:</span>
-                  <p className="mt-1.5 rounded-2xl bg-slate-900/40 border border-slate-800/80 p-3.5 text-slate-300 leading-relaxed">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Biography:</span>
+                  <p className="mt-1 rounded-lg bg-slate-50 border border-slate-200 p-3 text-slate-700 leading-relaxed dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-300">
                     {viewUser.user.profile.bio}
                   </p>
                 </div>
@@ -1071,19 +1033,19 @@ export default function SuperAdminUsersPage() {
               {/* Related Candidate Applications */}
               {viewUser.applications && (
                 <div>
-                  <span className="font-bold text-slate-300">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     Submitted Applications ({viewUser.applicationsCount}):
                   </span>
                   <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
                     {viewUser.applications.map((app) => (
                       <div
                         key={app.id}
-                        className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-[11px]"
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-850"
                       >
-                        <span className="font-semibold text-white">
+                        <span className="font-medium text-slate-800 dark:text-white">
                           {app.jobTitle} ({app.company})
                         </span>
-                        <span className="rounded-lg bg-brand/10 border border-brand/20 px-2 py-0.5 text-brand font-bold">
+                        <span className="rounded bg-brand/10 border border-brand/20 px-2 py-0.5 text-brand font-semibold">
                           {app.status}
                         </span>
                       </div>
@@ -1095,17 +1057,17 @@ export default function SuperAdminUsersPage() {
               {/* Related Recruiter Jobs */}
               {viewUser.jobs && (
                 <div>
-                  <span className="font-bold text-slate-300">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     Posted Job Positions ({viewUser.postedJobsCount}):
                   </span>
                   <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
                     {viewUser.jobs.map((job) => (
                       <div
                         key={job.id}
-                        className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-[11px]"
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-850"
                       >
-                        <span className="font-semibold text-white">{job.title}</span>
-                        <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-emerald-400 font-bold">
+                        <span className="font-medium text-slate-800 dark:text-white">{job.title}</span>
+                        <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-emerald-700 font-semibold dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400">
                           {job.status}
                         </span>
                       </div>
@@ -1115,11 +1077,11 @@ export default function SuperAdminUsersPage() {
               )}
             </div>
 
-            <div className="mt-6 flex justify-end pt-4 border-t border-slate-800">
+            <div className="mt-6 flex justify-end pt-3.5 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setViewUser(null)}
-                className="rounded-xl bg-slate-800 px-5 py-2 text-xs font-bold text-white hover:bg-slate-700 transition"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition"
               >
                 Close
               </button>
@@ -1130,23 +1092,23 @@ export default function SuperAdminUsersPage() {
 
       {/* DELETE CONFIRMATION DIALOG */}
       {deleteConfirmUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl">
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="rounded-2xl bg-rose-500/10 p-3">
-                <FaExclamationTriangle className="text-xl" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl dark:border-rose-900/40 dark:bg-slate-900">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <div className="rounded-lg bg-rose-50 p-2.5 dark:bg-rose-500/10">
+                <FaExclamationTriangle className="text-lg" />
               </div>
-              <h3 className="text-base font-bold text-white">Permanently Delete User?</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Permanently Delete User?</h3>
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-slate-300">
-              Are you sure you want to delete <strong className="text-white">{deleteConfirmUser.name}</strong> (
+            <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete <strong className="text-slate-900 dark:text-white">{deleteConfirmUser.name}</strong> (
               {deleteConfirmUser.email})? This action cannot be reversed.
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-5 flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmUser(null)}
-                className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800"
+                className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
               >
                 Cancel
               </button>
@@ -1154,7 +1116,7 @@ export default function SuperAdminUsersPage() {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleDeleteUser}
-                className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-rose-600/20 hover:bg-rose-500 disabled:opacity-50"
+                className="rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50"
               >
                 {actionLoading ? "Deleting..." : "Confirm Delete"}
               </button>
